@@ -23,14 +23,17 @@ export function getStealthArgs(): string[] {
 
 /**
  * Launch Chromium in a way that works both locally and on Vercel serverless.
- * Uses @sparticuz/chromium on Vercel, falls back to local Chromium for development.
+ * Uses @sparticuz/chromium-min on Vercel (downloads binary from GitHub Releases),
+ * falls back to local Chromium for development.
  */
 export async function launchBrowser(): Promise<Browser> {
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    const sparticuzChromium = (await import("@sparticuz/chromium")).default;
+    const sparticuzChromium = (await import("@sparticuz/chromium-min")).default;
     return chromium.launch({
       args: [...sparticuzChromium.args, ...getStealthArgs()],
-      executablePath: await sparticuzChromium.executablePath(),
+      executablePath: await sparticuzChromium.executablePath(
+        "https://github.com/Sparticuz/chromium/releases/download/v143.0.4/chromium-v143.0.4-pack.x64.tar"
+      ),
       headless: true,
     });
   }
