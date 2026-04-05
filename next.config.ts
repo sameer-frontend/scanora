@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  serverExternalPackages: ["playwright"],
+  serverExternalPackages: ["playwright-core", "@sparticuz/chromium"],
 };
 
 export default nextConfig;

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { chromium } from "playwright";
 import type {
   PerformanceData,
   PerformanceOpportunity,
@@ -10,7 +9,7 @@ import type {
 import { DEVICE_PROFILES } from "@/lib/types";
 import { fetchSitemapUrls } from "@/lib/sitemap";
 import {
-  getStealthArgs,
+  launchBrowser,
   applyStealthScripts,
   stealthGoto,
   getStealthContextOptions,
@@ -354,7 +353,7 @@ function buildPerfData(targetUrl: string, metrics: PageMetrics): PerformanceData
 }
 
 async function scanDevice(
-  browser: Awaited<ReturnType<typeof chromium.launch>>,
+  browser: Awaited<ReturnType<typeof launchBrowser>>,
   device: DeviceProfile,
   targetUrl: string
 ): Promise<DevicePerformanceResult & { links: string[] }> {
@@ -504,7 +503,7 @@ async function scanDevice(
 
 /** Scan a single page for performance data (no screenshot) */
 async function scanPerformancePage(
-  browser: Awaited<ReturnType<typeof chromium.launch>>,
+  browser: Awaited<ReturnType<typeof launchBrowser>>,
   device: DeviceProfile,
   targetUrl: string
 ): Promise<PerformanceData> {
@@ -612,9 +611,9 @@ function streamFullSiteScan(
         sitemapPages = await fetchSitemapUrls(parsedUrl.origin);
       } catch { /* fall back to link crawling */ }
 
-      let browser: Awaited<ReturnType<typeof chromium.launch>> | null = null;
+      let browser: Awaited<ReturnType<typeof launchBrowser>> | null = null;
       try {
-        browser = await chromium.launch({ headless: true, args: getStealthArgs() });
+        browser = await launchBrowser();
         const PAGE_CONCURRENCY = 3;
 
         await Promise.all(
@@ -702,7 +701,7 @@ export async function POST(req: NextRequest) {
 
   let browser;
   try {
-    browser = await chromium.launch({ headless: true, args: getStealthArgs() });
+    browser = await launchBrowser();
     const targetUrl = parsedUrl.toString();
 
     // Single-page mode — scan all devices in parallel

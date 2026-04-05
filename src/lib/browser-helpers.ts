@@ -3,7 +3,8 @@
  * Used by all API scan routes to handle Cloudflare, Google reCAPTCHA, and similar bot protections.
  */
 
-import type { Page, BrowserContext } from "playwright";
+import type { Page, BrowserContext, Browser } from "playwright-core";
+import { chromium } from "playwright-core";
 
 /**
  * Stealth browser context options to avoid bot detection.
@@ -18,6 +19,22 @@ export function getStealthArgs(): string[] {
     "--disable-infobars",
     "--window-size=1920,1080",
   ];
+}
+
+/**
+ * Launch Chromium in a way that works both locally and on Vercel serverless.
+ * Uses @sparticuz/chromium on Vercel, falls back to local Chromium for development.
+ */
+export async function launchBrowser(): Promise<Browser> {
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    const sparticuzChromium = (await import("@sparticuz/chromium")).default;
+    return chromium.launch({
+      args: [...sparticuzChromium.args, ...getStealthArgs()],
+      executablePath: await sparticuzChromium.executablePath(),
+      headless: true,
+    });
+  }
+  return chromium.launch({ headless: true, args: getStealthArgs() });
 }
 
 /**

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { chromium } from "playwright";
 import { join } from "path";
 import { createHash } from "crypto";
 import type {
@@ -12,7 +11,7 @@ import type {
 import { DEVICE_PROFILES } from "@/lib/types";
 import { fetchSitemapUrls } from "@/lib/sitemap";
 import {
-  getStealthArgs,
+  launchBrowser,
   applyStealthScripts,
   stealthGoto,
   getStealthContextOptions,
@@ -262,7 +261,7 @@ function buildA11yData(
 }
 
 async function scanDevice(
-  browser: Awaited<ReturnType<typeof chromium.launch>>,
+  browser: Awaited<ReturnType<typeof launchBrowser>>,
   device: DeviceProfile,
   targetUrl: string
 ): Promise<{ screenshot: string; axeResults: AxeResults; links: string[] }> {
@@ -322,7 +321,7 @@ async function scanDevice(
 
 /** Scan a single page (reuses existing context pattern but without screenshot) */
 async function scanPage(
-  browser: Awaited<ReturnType<typeof chromium.launch>>,
+  browser: Awaited<ReturnType<typeof launchBrowser>>,
   device: DeviceProfile,
   targetUrl: string
 ): Promise<AxeResults> {
@@ -442,9 +441,9 @@ function streamFullSiteScan(
         sitemapPages = await fetchSitemapUrls(parsedUrl.origin);
       } catch { /* fall back to link crawling */ }
 
-      let browser: Awaited<ReturnType<typeof chromium.launch>> | null = null;
+      let browser: Awaited<ReturnType<typeof launchBrowser>> | null = null;
       try {
-        browser = await chromium.launch({ headless: true, args: getStealthArgs() });
+        browser = await launchBrowser();
         const PAGE_CONCURRENCY = 5;
 
         await Promise.all(
@@ -534,9 +533,9 @@ export async function POST(req: NextRequest) {
     return streamFullSiteScan(parsedUrl, selectedDevices);
   }
 
-  let browser: Awaited<ReturnType<typeof chromium.launch>> | null = null;
+  let browser: Awaited<ReturnType<typeof launchBrowser>> | null = null;
   try {
-    browser = await chromium.launch({ headless: true, args: getStealthArgs() });
+    browser = await launchBrowser();
     const targetUrl = parsedUrl.toString();
     const activeBrowser = browser;
 
