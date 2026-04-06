@@ -6,6 +6,8 @@ import type {
   DeviceProfile,
   AssetFile,
 } from "@/lib/types";
+
+export const maxDuration = 600;
 import { DEVICE_PROFILES } from "@/lib/types";
 import { fetchSitemapUrls } from "@/lib/sitemap";
 import {
@@ -401,6 +403,24 @@ async function scanDevice(
   // ── Apply network & CPU throttling via CDP ──────────────────
   const throttle = THROTTLE_PROFILES[device.type] ?? THROTTLE_PROFILES.desktop;
   const cdp = await context.newCDPSession(page);
+
+  // Track actual transfer sizes via CDP (more reliable than Performance API
+  // which returns 0 for cross-origin resources without Timing-Allow-Origin)
+  const cdpSizes = new Map<string, number>();
+  const cdpUrls = new Map<string, string>();
+  const cdpTypes = new Map<string, string>();
+  cdp.on("Network.responseReceived", (event: Record<string, unknown>) => {
+    const resp = event.response as Record<string, unknown>;
+    const reqId = event.requestId as string;
+    cdpUrls.set(reqId, resp.url as string);
+    cdpTypes.set(reqId, (event.type as string || "").toLowerCase());
+  });
+  cdp.on("Network.loadingFinished", (event: Record<string, unknown>) => {
+    const reqId = event.requestId as string;
+    cdpSizes.set(reqId, (event.encodedDataLength as number) || 0);
+  });
+  await cdp.send("Network.enable");
+
   await cdp.send("Network.emulateNetworkConditions", {
     offline: false,
     downloadThroughput: throttle.downloadThroughput,
@@ -456,11 +476,40 @@ async function scanDevice(
       loadTime: navEntry ? navEntry.loadEventEnd - navEntry.fetchStart : 0,
       resources: resourceEntries.map((r) => ({
         name: r.name,
-        transferSize: r.transferSize,
+        transferSize: r.transferSize || r.encodedBodySize || r.decodedBodySize || 0,
         initiatorType: r.initiatorType,
       })),
     };
   });
+
+  // Supplement resource sizes with CDP data (handles cross-origin resources
+  // where Performance API reports transferSize: 0)
+  const cdpResourceMap = new Map<string, number>();
+  for (const [reqId, size] of cdpSizes) {
+    const url = cdpUrls.get(reqId);
+    if (url && size > 0) cdpResourceMap.set(url, size);
+  }
+  for (const r of metrics.resources) {
+    if (r.transferSize === 0) {
+      const cdpSize = cdpResourceMap.get(r.name);
+      if (cdpSize) r.transferSize = cdpSize;
+    }
+  }
+  // Add resources tracked by CDP but missing from Performance API
+  const perfUrls = new Set(metrics.resources.map((r) => r.name));
+  for (const [reqId, url] of cdpUrls) {
+    if (url && !perfUrls.has(url) && !url.startsWith("data:")) {
+      const size = cdpSizes.get(reqId) ?? 0;
+      const type = cdpTypes.get(reqId) ?? "";
+      const initiatorType =
+        type === "script" ? "script" :
+        type === "stylesheet" ? "css" :
+        type === "image" ? "img" :
+        type === "font" ? "link" :
+        "other";
+      metrics.resources.push({ name: url, transferSize: size, initiatorType });
+    }
+  }
 
   // ── Reset throttling before screenshot ──────────────────────
   await cdp.send("Network.emulateNetworkConditions", {
@@ -539,6 +588,23 @@ async function scanPerformancePage(
 
   const throttle = THROTTLE_PROFILES[device.type] ?? THROTTLE_PROFILES.desktop;
   const cdp = await context.newCDPSession(page);
+
+  // Track actual transfer sizes via CDP
+  const cdpSizesInner = new Map<string, number>();
+  const cdpUrlsInner = new Map<string, string>();
+  const cdpTypesInner = new Map<string, string>();
+  cdp.on("Network.responseReceived", (event: Record<string, unknown>) => {
+    const resp = event.response as Record<string, unknown>;
+    const reqId = event.requestId as string;
+    cdpUrlsInner.set(reqId, resp.url as string);
+    cdpTypesInner.set(reqId, (event.type as string || "").toLowerCase());
+  });
+  cdp.on("Network.loadingFinished", (event: Record<string, unknown>) => {
+    const reqId = event.requestId as string;
+    cdpSizesInner.set(reqId, (event.encodedDataLength as number) || 0);
+  });
+  await cdp.send("Network.enable");
+
   await cdp.send("Network.emulateNetworkConditions", {
     offline: false,
     downloadThroughput: throttle.downloadThroughput,
@@ -580,11 +646,38 @@ async function scanPerformancePage(
       loadTime: navEntry ? navEntry.loadEventEnd - navEntry.fetchStart : 0,
       resources: resourceEntries.map((r) => ({
         name: r.name,
-        transferSize: r.transferSize,
+        transferSize: r.transferSize || r.encodedBodySize || r.decodedBodySize || 0,
         initiatorType: r.initiatorType,
       })),
     };
   });
+
+  // Supplement resource sizes with CDP data
+  const cdpResourceMapInner = new Map<string, number>();
+  for (const [reqId, size] of cdpSizesInner) {
+    const url = cdpUrlsInner.get(reqId);
+    if (url && size > 0) cdpResourceMapInner.set(url, size);
+  }
+  for (const r of metrics.resources) {
+    if (r.transferSize === 0) {
+      const cdpSize = cdpResourceMapInner.get(r.name);
+      if (cdpSize) r.transferSize = cdpSize;
+    }
+  }
+  const perfUrlsInner = new Set(metrics.resources.map((r) => r.name));
+  for (const [reqId, url] of cdpUrlsInner) {
+    if (url && !perfUrlsInner.has(url) && !url.startsWith("data:")) {
+      const size = cdpSizesInner.get(reqId) ?? 0;
+      const type = cdpTypesInner.get(reqId) ?? "";
+      const initiatorType =
+        type === "script" ? "script" :
+        type === "stylesheet" ? "css" :
+        type === "image" ? "img" :
+        type === "font" ? "link" :
+        "other";
+      metrics.resources.push({ name: url, transferSize: size, initiatorType });
+    }
+  }
 
   await context.close();
   return buildPerfData(targetUrl, metrics);

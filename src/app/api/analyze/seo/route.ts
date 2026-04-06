@@ -9,6 +9,7 @@ import type {
   DeviceSeoResult,
   DeviceProfile,
 } from "@/lib/types";
+
 import { DEVICE_PROFILES } from "@/lib/types";
 import { fetchSitemapUrls } from "@/lib/sitemap";
 import {
@@ -18,6 +19,7 @@ import {
   getStealthContextOptions,
 } from "@/lib/browser-helpers";
 
+export const maxDuration = 600;
 // ── Page-level SEO extraction (runs inside browser) ───────────
 
 /** Strip trailing slash + fragment so /foo/ and /foo are treated as the same page */

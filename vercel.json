@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "src/app/api/analyze/accessibility/route.ts": {
+      "memory": 3008,
+      "maxDuration": 600
+    },
+    "src/app/api/analyze/performance/route.ts": {
+      "memory": 3008,
+      "maxDuration": 600
+    },
+    "src/app/api/analyze/seo/route.ts": {
+      "memory": 3008,
+      "maxDuration": 600
+    }
+  }
+}
