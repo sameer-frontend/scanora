@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings,
-  User,
   Clock,
   ChevronDown,
   ChevronUp,
@@ -14,10 +13,9 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -93,35 +91,27 @@ export default function SettingsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Settings</h1>
-            <p className="text-slate-400 text-sm">Manage your account and view scan history</p>
+            <p className="text-slate-400 text-sm">View scan history</p>
           </div>
         </div>
       </motion.div>
 
-      <motion.div variants={fadeUp} custom={1}>
-        <Tabs defaultValue="history" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="history"><Clock className="h-4 w-4 mr-1.5" /> Scan History</TabsTrigger>
-            <TabsTrigger value="account"><User className="h-4 w-4 mr-1.5" /> Account</TabsTrigger>
-          </TabsList>
-
-          {/* Scan History Tab */}
-          <TabsContent value="history" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-white">Recent Scans</h3>
-                <p className="text-sm text-slate-400">
-                  {history.length > 0
-                    ? `Your last ${history.length} scan${history.length !== 1 ? "s" : ""} stored locally.`
-                    : "No scan history yet."}
-                </p>
-              </div>
-              {history.length > 0 && (
-                <Button variant="outline" size="sm" onClick={clearHistory}>
-                  <Trash2 className="h-4 w-4 mr-1" /> Clear All
-                </Button>
-              )}
-            </div>
+      <motion.div variants={fadeUp} custom={1} className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-white">Recent Scans</h3>
+            <p className="text-sm text-slate-400">
+              {history.length > 0
+                ? `Your last ${history.length} scan${history.length !== 1 ? "s" : ""} stored locally.`
+                : "No scan history yet."}
+            </p>
+          </div>
+          {history.length > 0 && (
+            <Button variant="outline" size="sm" onClick={clearHistory}>
+              <Trash2 className="h-4 w-4 mr-1" /> Clear All
+            </Button>
+          )}
+        </div>
 
             {history.length === 0 ? (
               <Card>
@@ -290,39 +280,6 @@ export default function SettingsPage() {
                 })}
               </div>
             )}
-          </TabsContent>
-
-          {/* Account Tab */}
-          <TabsContent value="account" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile</CardTitle>
-                <CardDescription>Manage your personal information.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Name</label>
-                    <input
-                      type="text"
-                      defaultValue="John Doe"
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
-                    <input
-                      type="email"
-                      defaultValue="john@example.com"
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-colors"
-                    />
-                  </div>
-                </div>
-                <Button>Save Changes</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
       </motion.div>
     </motion.div>
   );

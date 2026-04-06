@@ -146,11 +146,6 @@ export default function LandingPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                Log in
-              </Button>
-            </Link>
             <Link href="/dashboard">
               <Button size="sm">
                 Start Scanning <ArrowRight className="h-4 w-4" />
@@ -195,7 +190,7 @@ export default function LandingPage() {
           </motion.p>
 
           <motion.div variants={fadeUp} custom={3} className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Link href="/dashboard/scan">
+            <Link href="/dashboard/accessibility">
               <Button size="lg" className="text-base px-8">
                 Start Free Scan
                 <ArrowRight className="ml-1 h-5 w-5" />
@@ -435,11 +430,11 @@ export default function LandingPage() {
                 Ready to audit your website?
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-lg text-slate-400">
-                Completely free. No sign-up required. Get detailed accessibility,
+                Completely free. No account required. Get detailed accessibility,
                 performance, and SEO reports across all devices in minutes.
               </p>
               <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-                <Link href="/dashboard/scan">
+                <Link href="/dashboard/accessibility">
                   <Button size="lg" className="text-base px-8">
                     Start Your Free Scan
                     <ArrowRight className="ml-1 h-5 w-5" />
@@ -466,8 +461,8 @@ export default function LandingPage() {
               <Link href="/docs" className="hover:text-white transition-colors">Docs</Link>
               <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
             </div>
-            <p className="text-sm text-slate-500">
-              © {new Date().getFullYear()} WebGuard. Free &amp; open source.
+            <p className="text-sm text-slate-500" suppressHydrationWarning>
+              {`© ${new Date().getFullYear()} WebGuard. Free & open source.`}
             </p>
           </div>
         </div>

@@ -10,30 +10,16 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Plus,
   Bell,
   Search,
-  User,
   LogOut,
   Globe,
-  Smartphone,
-  Tablet,
-  Laptop,
-  Monitor,
-  ScanSearch,
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { useScan } from "@/lib/scan-context";
-import type { DeviceType } from "@/lib/types";
 
 const navItems = [
-  {
-    label: "New Scan",
-    href: "/dashboard/scan",
-    icon: ScanSearch,
-  },
   {
     label: "Accessibility",
     href: "/dashboard/accessibility",
@@ -56,41 +42,10 @@ const navItems = [
   },
 ];
 
-const deviceOptions: { type: DeviceType; label: string; icon: typeof Smartphone }[] = [
-  { type: "mobile", label: "Mobile", icon: Smartphone },
-  { type: "tablet", label: "Tablet", icon: Tablet },
-  { type: "laptop", label: "Laptop", icon: Laptop },
-  { type: "desktop", label: "Desktop", icon: Monitor },
-];
-
 export default function DashboardSidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const [showScanInput, setShowScanInput] = useState(false);
-  const [scanUrl, setScanUrl] = useState("");
-  const {
-    startScan,
-    scannedUrl,
-    selectedDevices,
-    setSelectedDevices,
-  } = useScan();
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (showScanInput && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [showScanInput]);
-
-  function handleNewScan() {
-    if (showScanInput && scanUrl.trim()) {
-      startScan(scanUrl.trim());
-      setScanUrl("");
-      setShowScanInput(false);
-    } else {
-      setShowScanInput(true);
-    }
-  }
+  const { scannedUrl } = useScan();
 
   return (
     <motion.aside
@@ -134,7 +89,7 @@ export default function DashboardSidebar() {
                 className="flex-1 text-left"
               >
                 <div className="text-xs text-white font-medium truncate">{scannedUrl || "No site scanned"}</div>
-                <div className="text-xs text-slate-500">Pro Plan</div>
+                <div className="text-xs text-slate-500">Free</div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -184,132 +139,6 @@ export default function DashboardSidebar() {
           );
         })}
       </nav>
-
-      {/* New Scan Button */}
-      <div className="p-3 space-y-2">
-        {/* Device Picker */}
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="rounded-lg border border-slate-800 bg-slate-900/50 p-2"
-            >
-              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium mb-1.5 px-1">
-                Devices
-              </div>
-              <div className="grid grid-cols-4 gap-1">
-                {deviceOptions.map(({ type, label, icon: Icon }) => {
-                  const active = selectedDevices.includes(type);
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => {
-                        setSelectedDevices([type]);
-                      }}
-                      className={cn(
-                        "flex flex-col items-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] transition-colors",
-                        active
-                          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25"
-                          : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 border border-transparent"
-                      )}
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        {collapsed && (
-          <div className="flex flex-col items-center gap-1">
-            {deviceOptions.map(({ type, icon: Icon }) => {
-              const active = selectedDevices.includes(type);
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => {
-                    setSelectedDevices([type]);
-                  }}
-                  className={cn(
-                    "rounded-md p-1.5 transition-colors",
-                    active ? "bg-emerald-500/15 text-emerald-400" : "text-slate-500 hover:text-slate-300"
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                </button>
-              );
-            })}
-          </div>
-        )}
-        {/* Scan Mode Toggle */}
-        <AnimatePresence>
-          {showScanInput && !collapsed && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <input
-                ref={inputRef}
-                type="text"
-                value={scanUrl}
-                onChange={(e) => setScanUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleNewScan();
-                  if (e.key === "Escape") setShowScanInput(false);
-                }}
-                placeholder="Enter URL..."
-                className="h-9 w-full rounded-lg border border-slate-800 bg-slate-900/50 px-3 text-sm text-white placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none transition-colors mb-2"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <Button onClick={handleNewScan} className={cn("w-full", collapsed && "px-0")}>
-          <Plus className="h-4 w-4 shrink-0" />
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                {showScanInput && scanUrl.trim() ? "Start Scan" : "New Scan"}
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </Button>
-      </div>
-
-      {/* User section */}
-      <div className="border-t border-slate-800/50 p-3">
-        <div className={cn(
-          "flex items-center gap-3 rounded-lg p-2",
-          collapsed && "justify-center"
-        )}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-slate-700">
-            <User className="h-4 w-4 text-emerald-400" />
-          </div>
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex-1 min-w-0"
-              >
-                <div className="text-sm font-medium text-white truncate">John Doe</div>
-                <div className="text-xs text-slate-500 truncate">john@example.com</div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
 
       {/* Collapse toggle */}
       <button

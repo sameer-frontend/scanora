@@ -46,7 +46,7 @@ const visitorData = {
 
 const topPages = [
   { path: "/", views: 3420, unique: 2105, bounce: 28 },
-  { path: "/pricing", views: 1890, unique: 1450, bounce: 22 },
+  { path: "/features", views: 1890, unique: 1450, bounce: 22 },
   { path: "/blog/ai-accessibility", views: 1204, unique: 980, bounce: 38 },
   { path: "/features", views: 876, unique: 654, bounce: 31 },
   { path: "/docs/getting-started", views: 654, unique: 520, bounce: 45 },

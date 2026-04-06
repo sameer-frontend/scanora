@@ -277,12 +277,7 @@ export default function DocsPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                Log in
-              </Button>
-            </Link>
-            <Link href="/dashboard/scan">
+            <Link href="/dashboard/accessibility">
               <Button size="sm">
                 Start Scanning
               </Button>

@@ -1,10 +1,8 @@
 "use client";
 import { Suspense, lazy, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Search,
   Download,
-  ScanSearch,
   CheckCircle2,
   AlertTriangle,
   XCircle,
@@ -24,7 +22,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScanEmptyState, ScanLoadingState, ScanErrorState } from "@/components/dashboard/scan-states";
+import { ScanLoadingState, ScanErrorState } from "@/components/dashboard/scan-states";
+import { ScanForm } from "@/components/dashboard/scan-form";
 import { useScan } from "@/lib/scan-context";
 import type { DeviceType, DeviceSeoResult, SeoData } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -462,11 +461,11 @@ function PageSeoSections({
 
 /* Main SEO page */
 export default function SeoPage() {
-  const router = useRouter();
   const {
     seoData: results,
     seoLoading: loading,
     seoError: error,
+    scanSeo,
   } = useScan();
 
   const [activeDevice, setActiveDevice] = useState<DeviceType | null>(null);
@@ -479,15 +478,14 @@ export default function SeoPage() {
   // Empty state
   if (!results && !loading && !error) {
     return (
-      <ScanEmptyState
-        icon={Search}
+      <ScanForm
+        onScan={scanSeo}
+        scanning={loading}
         accentColor="orange"
-        description='Enter a URL in the sidebar and click "New Scan" to run a comprehensive SEO audit across devices.'
-      >
-        <Button variant="outline" size="sm" className="mt-4" onClick={() => router.push("/dashboard")}>
-          <ScanSearch className="h-4 w-4 mr-1.5" /> Go to Scan
-        </Button>
-      </ScanEmptyState>
+        icon={Search}
+        title="SEO Audit"
+        description="Enter a URL and select a device to run a comprehensive SEO analysis including meta tags, headings, Open Graph, and structured data."
+      />
     );
   }
 

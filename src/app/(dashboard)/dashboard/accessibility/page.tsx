@@ -20,7 +20,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScanEmptyState, ScanLoadingState, ScanErrorState } from "@/components/dashboard/scan-states";
+import { ScanLoadingState, ScanErrorState } from "@/components/dashboard/scan-states";
+import { ScanForm } from "@/components/dashboard/scan-form";
 import { useScan } from "@/lib/scan-context";
 import type { DeviceType, DeviceAccessibilityResult, AccessibilityIssue, WcagPrinciple } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,7 @@ export default function AccessibilityPage() {
     accessibilityData: results,
     accessibilityLoading: loading,
     accessibilityError: error,
+    scanAccessibility,
   } = useScan();
 
   const [activeDevice, setActiveDevice] = useState<DeviceType | null>(null);
@@ -66,10 +68,13 @@ export default function AccessibilityPage() {
   // Empty state
   if (!results && !loading && !error) {
     return (
-      <ScanEmptyState
-        icon={Accessibility}
+      <ScanForm
+        onScan={scanAccessibility}
+        scanning={loading}
         accentColor="emerald"
-        description='Enter a URL in the sidebar and click "New Scan" to run a Playwright-powered WCAG 2.2 accessibility audit across devices.'
+        icon={Accessibility}
+        title="Accessibility Audit"
+        description="Enter a URL and select a device to run a WCAG 2.2 accessibility audit powered by Playwright and axe-core."
       />
     );
   }

@@ -15,7 +15,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScanEmptyState, ScanLoadingState, ScanErrorState } from "@/components/dashboard/scan-states";
+import { ScanLoadingState, ScanErrorState } from "@/components/dashboard/scan-states";
+import { ScanForm } from "@/components/dashboard/scan-form";
 import { useScan } from "@/lib/scan-context";
 import type { DeviceType, DevicePerformanceResult, AssetFile } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ export default function PerformancePage() {
     performanceData: results,
     performanceLoading: loading,
     performanceError: error,
+    scanPerformance,
   } = useScan();
 
   const [activeDevice, setActiveDevice] = useState<DeviceType | null>(null);
@@ -69,10 +71,13 @@ export default function PerformancePage() {
   // Empty state
   if (!results && !loading && !error) {
     return (
-      <ScanEmptyState
-        icon={Zap}
+      <ScanForm
+        onScan={scanPerformance}
+        scanning={loading}
         accentColor="cyan"
-        description='Enter a URL in the sidebar and click "New Scan" to run a Playwright-powered performance audit across devices.'
+        icon={Zap}
+        title="Performance Audit"
+        description="Enter a URL and select a device to run a Lighthouse-powered performance audit with Core Web Vitals."
       />
     );
   }

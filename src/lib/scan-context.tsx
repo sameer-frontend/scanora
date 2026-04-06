@@ -5,7 +5,6 @@ import {
   useContext,
   useState,
   useCallback,
-  useEffect,
   useRef,
   type ReactNode,
 } from "react";
@@ -19,12 +18,14 @@ import type {
 interface ScanContextType {
   url: string;
   setUrl: (url: string) => void;
-  scanning: boolean;
   scannedUrl: string;
   selectedDevices: DeviceType[];
   setSelectedDevices: (d: DeviceType[]) => void;
-  startScan: (inputUrl: string) => void;
-  scanTrigger: number;
+
+  scanAccessibility: (inputUrl: string) => void;
+  scanPerformance: (inputUrl: string) => void;
+  scanSeo: (inputUrl: string) => void;
+
   accessibilityData: DeviceAccessibilityResult[] | null;
   accessibilityLoading: boolean;
   accessibilityError: string | null;
@@ -38,12 +39,14 @@ interface ScanContextType {
 
 const ScanContext = createContext<ScanContextType | null>(null);
 
+function normalizeUrl(input: string) {
+  return input.startsWith("http") ? input : `https://${input}`;
+}
+
 export function ScanProvider({ children }: { children: ReactNode }) {
   const [url, setUrl] = useState("");
-  const [scanning, setScanning] = useState(false);
   const [scannedUrl, setScannedUrl] = useState("");
   const [selectedDevices, setSelectedDevices] = useState<DeviceType[]>(["desktop"]);
-  const [scanTrigger, setScanTrigger] = useState(0);
 
   const [accessibilityData, setAccessibilityData] = useState<DeviceAccessibilityResult[] | null>(null);
   const [accessibilityLoading, setAccessibilityLoading] = useState(false);
@@ -57,190 +60,197 @@ export function ScanProvider({ children }: { children: ReactNode }) {
   const [seoLoading, setSeoLoading] = useState(false);
   const [seoError, setSeoError] = useState<string | null>(null);
 
-  const abortRef = useRef<AbortController | null>(null);
-  const scanInitiatedRef = useRef(false);
+  const a11yAbortRef = useRef<AbortController | null>(null);
+  const perfAbortRef = useRef<AbortController | null>(null);
+  const seoAbortRef = useRef<AbortController | null>(null);
 
-  // Derive scanning from all loading flags
-  const activeCount =
-    (accessibilityLoading ? 1 : 0) +
-    (performanceLoading ? 1 : 0) +
-    (seoLoading ? 1 : 0);
+  const persistResult = useCallback(
+    (
+      category: "accessibility" | "performance" | "seo",
+      scanUrl: string,
+      data: unknown,
+    ) => {
+      try {
+        const strip = <T extends { screenshot?: string }>(arr: T[]) =>
+          arr.map(({ screenshot: _s, ...rest }) => ({ ...rest, screenshot: "" }));
+        const prev: Record<string, unknown>[] = JSON.parse(
+          localStorage.getItem("webguard-scan-history") || "[]",
+        );
+        // Merge into existing entry for same URL or create new
+        const existing = prev.find(
+          (e: Record<string, unknown>) => e.url === scanUrl,
+        );
+        if (existing) {
+          existing[category] = strip(data as { screenshot?: string }[]);
+          existing.timestamp = Date.now();
+          localStorage.setItem(
+            "webguard-scan-history",
+            JSON.stringify(prev.slice(0, 5)),
+          );
+        } else {
+          const entry = {
+            url: scanUrl,
+            timestamp: Date.now(),
+            accessibility: null,
+            performance: null,
+            seo: null,
+            [category]: strip(data as { screenshot?: string }[]),
+          };
+          localStorage.setItem(
+            "webguard-scan-history",
+            JSON.stringify([entry, ...prev].slice(0, 5)),
+          );
+        }
+      } catch {
+        /* localStorage full or unavailable */
+      }
+    },
+    [],
+  );
 
-  useEffect(() => {
-    if (activeCount === 0 && scanning) setScanning(false);
-  }, [activeCount, scanning]);
-
-  const startScan = useCallback(
+  const scanAccessibility = useCallback(
     (inputUrl: string) => {
       if (!inputUrl.trim()) return;
-
-      // Abort any in-flight scan
-      if (abortRef.current) abortRef.current.abort();
+      if (a11yAbortRef.current) a11yAbortRef.current.abort();
       const controller = new AbortController();
-      abortRef.current = controller;
+      a11yAbortRef.current = controller;
 
-      const normalized = inputUrl.startsWith("http")
-        ? inputUrl
-        : `https://${inputUrl}`;
-
+      const normalized = normalizeUrl(inputUrl);
       setUrl(normalized);
       setScannedUrl(normalized);
-      setScanning(true);
-      setScanTrigger((p) => p + 1);
-      scanInitiatedRef.current = true;
-
-      // Reset states
       setAccessibilityData(null);
       setAccessibilityLoading(true);
       setAccessibilityError(null);
-      setPerformanceData(null);
-      setPerformanceLoading(true);
-      setPerformanceError(null);
-      setSeoData(null);
-      setSeoLoading(true);
-      setSeoError(null);
 
-      const body = JSON.stringify({
-        url: normalized,
-        devices: selectedDevices,
-      });
-
-      // ── Accessibility scan ──────────────────────────────────
       (async () => {
         try {
           const res = await fetch("/api/analyze/accessibility", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             cache: "no-store",
-            body,
+            body: JSON.stringify({ url: normalized, devices: selectedDevices }),
             signal: controller.signal,
           });
-
           if (!res.ok) {
             const err = await res.json().catch(() => ({ error: "Unknown error" }));
             throw new Error(err.error || `HTTP ${res.status}`);
           }
-
-          const data = await res.json() as DeviceAccessibilityResult[];
-          if (!controller.signal.aborted) setAccessibilityData(data);
-          setAccessibilityLoading(false);
+          const data = (await res.json()) as DeviceAccessibilityResult[];
+          if (!controller.signal.aborted) {
+            setAccessibilityData(data);
+            persistResult("accessibility", normalized, data);
+          }
         } catch (err) {
           if (!controller.signal.aborted) {
             setAccessibilityError(err instanceof Error ? err.message : String(err));
-            setAccessibilityLoading(false);
           }
+        } finally {
+          if (!controller.signal.aborted) setAccessibilityLoading(false);
         }
       })();
+    },
+    [selectedDevices, persistResult],
+  );
 
-      // ── Performance scan ────────────────────────────────────
+  const scanPerformance = useCallback(
+    (inputUrl: string) => {
+      if (!inputUrl.trim()) return;
+      if (perfAbortRef.current) perfAbortRef.current.abort();
+      const controller = new AbortController();
+      perfAbortRef.current = controller;
+
+      const normalized = normalizeUrl(inputUrl);
+      setUrl(normalized);
+      setScannedUrl(normalized);
+      setPerformanceData(null);
+      setPerformanceLoading(true);
+      setPerformanceError(null);
+
       (async () => {
         try {
           const res = await fetch("/api/analyze/performance", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             cache: "no-store",
-            body,
+            body: JSON.stringify({ url: normalized, devices: selectedDevices }),
             signal: controller.signal,
           });
-
           if (!res.ok) {
             const err = await res.json().catch(() => ({ error: "Unknown error" }));
             throw new Error(err.error || `HTTP ${res.status}`);
           }
-
-          const data = await res.json() as DevicePerformanceResult[];
-          if (!controller.signal.aborted) setPerformanceData(data);
-          setPerformanceLoading(false);
+          const data = (await res.json()) as DevicePerformanceResult[];
+          if (!controller.signal.aborted) {
+            setPerformanceData(data);
+            persistResult("performance", normalized, data);
+          }
         } catch (err) {
           if (!controller.signal.aborted) {
             setPerformanceError(err instanceof Error ? err.message : String(err));
-            setPerformanceLoading(false);
           }
+        } finally {
+          if (!controller.signal.aborted) setPerformanceLoading(false);
         }
       })();
+    },
+    [selectedDevices, persistResult],
+  );
 
-      // ── SEO scan ────────────────────────────────────────────
+  const scanSeo = useCallback(
+    (inputUrl: string) => {
+      if (!inputUrl.trim()) return;
+      if (seoAbortRef.current) seoAbortRef.current.abort();
+      const controller = new AbortController();
+      seoAbortRef.current = controller;
+
+      const normalized = normalizeUrl(inputUrl);
+      setUrl(normalized);
+      setScannedUrl(normalized);
+      setSeoData(null);
+      setSeoLoading(true);
+      setSeoError(null);
+
       (async () => {
         try {
           const res = await fetch("/api/analyze/seo", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             cache: "no-store",
-            body,
+            body: JSON.stringify({ url: normalized, devices: selectedDevices }),
             signal: controller.signal,
           });
-
           if (!res.ok) {
             const err = await res.json().catch(() => ({ error: "Unknown error" }));
             throw new Error(err.error || `HTTP ${res.status}`);
           }
-
-          const data = await res.json() as DeviceSeoResult[];
-          if (!controller.signal.aborted) setSeoData(data);
-          setSeoLoading(false);
+          const data = (await res.json()) as DeviceSeoResult[];
+          if (!controller.signal.aborted) {
+            setSeoData(data);
+            persistResult("seo", normalized, data);
+          }
         } catch (err) {
           if (!controller.signal.aborted) {
             setSeoError(err instanceof Error ? err.message : String(err));
-            setSeoLoading(false);
           }
+        } finally {
+          if (!controller.signal.aborted) setSeoLoading(false);
         }
       })();
     },
-    [selectedDevices]
+    [selectedDevices, persistResult],
   );
-
-  // Persist scan results to localStorage when all scans complete
-  useEffect(() => {
-    if (
-      scanInitiatedRef.current &&
-      scannedUrl &&
-      !accessibilityLoading &&
-      !performanceLoading &&
-      !seoLoading &&
-      (accessibilityData || performanceData || seoData)
-    ) {
-      scanInitiatedRef.current = false;
-      // Strip screenshots to save localStorage space
-      const strip = <T extends { screenshot?: string }>(arr: T[] | null) =>
-        arr?.map(({ screenshot: _s, ...rest }) => ({ ...rest, screenshot: "" })) ?? null;
-      const entry = {
-        url: scannedUrl,
-        timestamp: Date.now(),
-        accessibility: strip(accessibilityData),
-        performance: strip(performanceData),
-        seo: strip(seoData),
-      };
-      try {
-        const prev = JSON.parse(localStorage.getItem("webguard-scan-history") || "[]");
-        localStorage.setItem(
-          "webguard-scan-history",
-          JSON.stringify([entry, ...prev].slice(0, 5))
-        );
-      } catch {
-        /* localStorage full or unavailable */
-      }
-    }
-  }, [
-    scannedUrl,
-    accessibilityLoading,
-    performanceLoading,
-    seoLoading,
-    accessibilityData,
-    performanceData,
-    seoData,
-  ]);
 
   return (
     <ScanContext.Provider
       value={{
         url,
         setUrl,
-        scanning,
         scannedUrl,
         selectedDevices,
         setSelectedDevices,
-        startScan,
-        scanTrigger,
+        scanAccessibility,
+        scanPerformance,
+        scanSeo,
         accessibilityData,
         accessibilityLoading,
         accessibilityError,
