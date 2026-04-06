@@ -155,21 +155,12 @@ export interface DeviceAccessibilityResult {
   device: DeviceProfile;
   screenshot: string; // base64 data URI
   data: AccessibilityData;
-  pages?: { url: string; data: AccessibilityData }[];
 }
 
 export interface DevicePerformanceResult {
   device: DeviceProfile;
   screenshot: string; // base64 data URI
   data: PerformanceData;
-  pages?: { url: string; data: PerformanceData }[];
-}
-
-export type ScanMode = "single" | "full-site";
-
-export interface CrawledPage {
-  url: string;
-  title: string;
 }
 
 // ── SEO types ──────────────────────────────────────────────────
@@ -275,5 +266,4 @@ export interface DeviceSeoResult {
   device: DeviceProfile;
   screenshot: string;
   data: SeoData;
-  pages?: { url: string; data: SeoData }[];
 }

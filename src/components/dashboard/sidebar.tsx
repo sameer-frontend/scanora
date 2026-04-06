@@ -21,8 +21,6 @@ import {
   Laptop,
   Monitor,
   ScanSearch,
-  FileStack,
-  File,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -73,8 +71,6 @@ export default function DashboardSidebar() {
   const {
     startScan,
     scannedUrl,
-    scanMode,
-    setScanMode,
     selectedDevices,
     setSelectedDevices,
   } = useScan();
@@ -252,66 +248,6 @@ export default function DashboardSidebar() {
           </div>
         )}
         {/* Scan Mode Toggle */}
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="rounded-lg border border-slate-800 bg-slate-900/50 p-2"
-            >
-              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium mb-1.5 px-1">
-                Crawl Mode
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <button
-                  type="button"
-                  onClick={() => setScanMode("single")}
-                  className={cn(
-                    "flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors",
-                    scanMode === "single"
-                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25"
-                      : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 border border-transparent"
-                  )}
-                >
-                  <File className="h-3.5 w-3.5" />
-                  One Page
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setScanMode("full-site")}
-                  className={cn(
-                    "flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium transition-colors",
-                    scanMode === "full-site"
-                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25"
-                      : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 border border-transparent"
-                  )}
-                >
-                  <FileStack className="h-3.5 w-3.5" />
-                  Full Site
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        {collapsed && (
-          <button
-            type="button"
-            onClick={() => setScanMode(scanMode === "single" ? "full-site" : "single")}
-            className={cn(
-              "flex w-full items-center justify-center rounded-lg border p-2 transition-colors",
-              scanMode === "full-site"
-                ? "border-emerald-500/30 bg-emerald-500/10"
-                : "border-slate-800 bg-slate-900/50 hover:bg-slate-800/50"
-            )}
-          >
-            {scanMode === "full-site" ? (
-              <FileStack className="h-4 w-4 text-emerald-400" />
-            ) : (
-              <File className="h-4 w-4 text-slate-500" />
-            )}
-          </button>
-        )}
         <AnimatePresence>
           {showScanInput && !collapsed && (
             <motion.div

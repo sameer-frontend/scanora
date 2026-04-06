@@ -9,27 +9,12 @@ import type {
 
 export const maxDuration = 300;
 import { DEVICE_PROFILES } from "@/lib/types";
-import { fetchSitemapUrls } from "@/lib/sitemap";
 import {
   launchBrowser,
   applyStealthScripts,
   stealthGoto,
   getStealthContextOptions,
 } from "@/lib/browser-helpers";
-
-/** Strip trailing slash + fragment so /foo/ and /foo are treated as the same page */
-function normalizeUrl(raw: string): string {
-  try {
-    const u = new URL(raw);
-    u.hash = "";
-    if (u.pathname.length > 1 && u.pathname.endsWith("/")) {
-      u.pathname = u.pathname.slice(0, -1);
-    }
-    return u.toString();
-  } catch {
-    return raw;
-  }
-}
 
 interface ResourceEntry {
   name: string;
@@ -358,7 +343,7 @@ async function scanDevice(
   browser: Awaited<ReturnType<typeof launchBrowser>>,
   device: DeviceProfile,
   targetUrl: string
-): Promise<DevicePerformanceResult & { links: string[] }> {
+): Promise<DevicePerformanceResult> {
   const ctxOpts = getStealthContextOptions(device);
   const context = await browser.newContext(ctxOpts);
   const page = await context.newPage();
@@ -522,255 +507,23 @@ async function scanDevice(
     await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
   }
 
-  // Extract crawlable same-origin links for full-site mode
-  const origin = new URL(targetUrl).origin;
-  const discoveredLinks: string[] = await page.evaluate((orig: string) => {
-    return Array.from(document.querySelectorAll("a[href]"))
-      .map((a) => {
-        try { return new URL((a as HTMLAnchorElement).href, document.location.href).href; }
-        catch { return ""; }
-      })
-      .filter(
-        (href) => href.startsWith(orig) && !href.includes("#") &&
-          !href.match(/\.(pdf|zip|png|jpg|jpeg|gif|svg|webp|mp4|mp3)$/i)
-      );
-  }, origin);
-
-  const screenshotBuf = await page.screenshot({
-    fullPage: true,
-    type: "jpeg",
-    quality: 70,
-  });
+  const screenshotBuf = await page.screenshot({ fullPage: true, type: "jpeg", quality: 70 });
   const screenshot = `data:image/jpeg;base64,${screenshotBuf.toString("base64")}`;
 
   await context.close();
 
-  const data = buildPerfData(targetUrl, metrics);
-
-  return { device, screenshot, data, links: [...new Set(discoveredLinks.map(normalizeUrl))] };
-}
-
-/** Scan a single page for performance data (no screenshot) */
-async function scanPerformancePage(
-  browser: Awaited<ReturnType<typeof launchBrowser>>,
-  device: DeviceProfile,
-  targetUrl: string
-): Promise<PerformanceData> {
-  const ctxOpts = getStealthContextOptions(device);
-  const context = await browser.newContext(ctxOpts);
-  const page = await context.newPage();
-  await applyStealthScripts(page);
-
-  await page.addInitScript(() => {
-    const g = globalThis as unknown as Record<string, unknown>;
-    g.__wg_lcp = 0;
-    g.__wg_cls = 0;
-    g.__wg_longTasks = [] as number[];
-    try {
-      new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) g.__wg_lcp = entry.startTime;
-      }).observe({ type: "largest-contentful-paint", buffered: true });
-    } catch { /* unsupported */ }
-    try {
-      new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (!(entry as unknown as { hadRecentInput: boolean }).hadRecentInput)
-            g.__wg_cls = (g.__wg_cls as number) + (entry as unknown as { value: number }).value;
-        }
-      }).observe({ type: "layout-shift", buffered: true });
-    } catch { /* unsupported */ }
-    try {
-      new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) (g.__wg_longTasks as number[]).push(entry.duration);
-      }).observe({ type: "longtask", buffered: true });
-    } catch { /* unsupported */ }
-  });
-
-  const throttle = THROTTLE_PROFILES[device.type] ?? THROTTLE_PROFILES.desktop;
-  const cdp = await context.newCDPSession(page);
-
-  // Track actual transfer sizes via CDP
-  const cdpSizesInner = new Map<string, number>();
-  const cdpUrlsInner = new Map<string, string>();
-  const cdpTypesInner = new Map<string, string>();
-  cdp.on("Network.responseReceived", (event: Record<string, unknown>) => {
-    const resp = event.response as Record<string, unknown>;
-    const reqId = event.requestId as string;
-    cdpUrlsInner.set(reqId, resp.url as string);
-    cdpTypesInner.set(reqId, (event.type as string || "").toLowerCase());
-  });
-  cdp.on("Network.loadingFinished", (event: Record<string, unknown>) => {
-    const reqId = event.requestId as string;
-    cdpSizesInner.set(reqId, (event.encodedDataLength as number) || 0);
-  });
-  await cdp.send("Network.enable");
-
-  await cdp.send("Network.emulateNetworkConditions", {
-    offline: false,
-    downloadThroughput: throttle.downloadThroughput,
-    uploadThroughput: throttle.uploadThroughput,
-    latency: throttle.latency,
-  });
-  if (throttle.cpuRate > 1) {
-    await cdp.send("Emulation.setCPUThrottlingRate", { rate: throttle.cpuRate });
-  }
-
-  const nav = await stealthGoto(page, targetUrl, { waitUntil: "networkidle", timeout: 60000 });
-  if (!nav.success) {
-    await context.close();
-    throw new Error(`Blocked by ${nav.challengeDetected} on ${targetUrl}`);
-  }
-  await page.waitForTimeout(1500);
-
-  const metrics: PageMetrics = await page.evaluate(() => {
-    const g = globalThis as unknown as Record<string, unknown>;
-    const navEntry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming;
-    const paintEntries = performance.getEntriesByType("paint");
-    const fcpEntry = paintEntries.find((e) => e.name === "first-contentful-paint");
-    let lcp = (g.__wg_lcp as number) || 0;
-    if (!lcp) {
-      try {
-        const lcpEntries = performance.getEntriesByType("largest-contentful-paint");
-        if (lcpEntries.length > 0) lcp = lcpEntries[lcpEntries.length - 1].startTime;
-      } catch { lcp = 0; }
-    }
-    const cls = (g.__wg_cls as number) || 0;
-    const longTasks = (g.__wg_longTasks as number[]) || [];
-    const tbt = longTasks.filter((d) => d > 50).reduce((sum, d) => sum + (d - 50), 0);
-    const resourceEntries = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
-    return {
-      ttfb: navEntry ? navEntry.responseStart - navEntry.requestStart : 0,
-      fcp: fcpEntry ? fcpEntry.startTime : 0,
-      lcp, tbt, cls,
-      domContentLoaded: navEntry ? navEntry.domContentLoadedEventEnd - navEntry.fetchStart : 0,
-      loadTime: navEntry ? navEntry.loadEventEnd - navEntry.fetchStart : 0,
-      resources: resourceEntries.map((r) => ({
-        name: r.name,
-        transferSize: r.transferSize || r.encodedBodySize || r.decodedBodySize || 0,
-        initiatorType: r.initiatorType,
-      })),
-    };
-  });
-
-  // Supplement resource sizes with CDP data
-  const cdpResourceMapInner = new Map<string, number>();
-  for (const [reqId, size] of cdpSizesInner) {
-    const url = cdpUrlsInner.get(reqId);
-    if (url && size > 0) cdpResourceMapInner.set(url, size);
-  }
-  for (const r of metrics.resources) {
-    if (r.transferSize === 0) {
-      const cdpSize = cdpResourceMapInner.get(r.name);
-      if (cdpSize) r.transferSize = cdpSize;
-    }
-  }
-  const perfUrlsInner = new Set(metrics.resources.map((r) => r.name));
-  for (const [reqId, url] of cdpUrlsInner) {
-    if (url && !perfUrlsInner.has(url) && !url.startsWith("data:")) {
-      const size = cdpSizesInner.get(reqId) ?? 0;
-      const type = cdpTypesInner.get(reqId) ?? "";
-      const initiatorType =
-        type === "script" ? "script" :
-        type === "stylesheet" ? "css" :
-        type === "image" ? "img" :
-        type === "font" ? "link" :
-        "other";
-      metrics.resources.push({ name: url, transferSize: size, initiatorType });
-    }
-  }
-
-  await context.close();
-  return buildPerfData(targetUrl, metrics);
-}
-
-// ── Streaming full-site scan ─────────────────────────────────
-function streamFullSiteScan(
-  parsedUrl: URL,
-  selectedDevices: DeviceProfile[]
-) {
-  const targetUrl = parsedUrl.toString();
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder();
-      const emit = (data: unknown) => {
-        try {
-          controller.enqueue(encoder.encode(JSON.stringify(data) + "\n"));
-        } catch { /* stream closed by client */ }
-      };
-
-      let sitemapPages: string[] = [];
-      try {
-        sitemapPages = await fetchSitemapUrls(parsedUrl.origin);
-      } catch { /* fall back to link crawling */ }
-
-      let browser: Awaited<ReturnType<typeof launchBrowser>> | null = null;
-      try {
-        browser = await launchBrowser();
-        const PAGE_CONCURRENCY = 3;
-
-        await Promise.all(
-          selectedDevices.map(async (device) => {
-            const { links, ...deviceResult } = await scanDevice(browser!, device, targetUrl);
-
-            const normTarget = normalizeUrl(targetUrl);
-            const discoveredPages = [...new Set(
-              (sitemapPages.length > 0 ? sitemapPages : links)
-                .map(normalizeUrl)
-                .filter((l) => l !== normTarget)
-            )];
-
-            // Emit main page result immediately
-            emit({
-              type: "init",
-              deviceType: device.type,
-              device: deviceResult.device,
-              screenshot: deviceResult.screenshot,
-              data: deviceResult.data,
-              pagesTotal: discoveredPages.length + 1,
-            });
-
-            if (discoveredPages.length > 0) {
-              let idx = 0;
-              async function worker() {
-                while (idx < discoveredPages.length) {
-                  const pageUrl = discoveredPages[idx++];
-                  try {
-                    const pageData = await scanPerformancePage(browser!, device, pageUrl);
-                    emit({ type: "page", deviceType: device.type, page: { url: pageUrl, data: pageData } });
-                  } catch { /* skip failed pages */ }
-                }
-              }
-              await Promise.all(
-                Array.from({ length: Math.min(PAGE_CONCURRENCY, discoveredPages.length) }, () => worker())
-              );
-            }
-
-            emit({ type: "device-done", deviceType: device.type });
-          })
-        );
-
-        emit({ type: "done" });
-        await browser.close();
-      } catch (err) {
-        if (browser) try { await browser.close(); } catch {}
-        emit({ type: "error", error: err instanceof Error ? err.message : "Scan failed" });
-      }
-
-      controller.close();
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-store, no-cache",
-    },
-  });
+  return { device, screenshot, data: buildPerfData(targetUrl, metrics) };
 }
 
 export async function POST(req: NextRequest) {
-  const { url, devices, scanMode } = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  const { url, devices } = body as { url?: unknown; devices?: unknown };
 
   if (!url || typeof url !== "string") {
     return NextResponse.json({ error: "URL is required" }, { status: 400 });
@@ -785,23 +538,21 @@ export async function POST(req: NextRequest) {
 
   const selectedDevices: DeviceProfile[] =
     Array.isArray(devices) && devices.length > 0
-      ? DEVICE_PROFILES.filter((d) => devices.includes(d.type))
+      ? DEVICE_PROFILES.filter((d) => (devices as string[]).includes(d.type))
       : DEVICE_PROFILES;
 
-  if (scanMode === "full-site") {
-    return streamFullSiteScan(parsedUrl, selectedDevices);
+  if (selectedDevices.length === 0) {
+    return NextResponse.json({ error: "No valid devices specified" }, { status: 400 });
   }
 
-  let browser;
+  let browser: Awaited<ReturnType<typeof launchBrowser>> | null = null;
   try {
     browser = await launchBrowser();
     const targetUrl = parsedUrl.toString();
 
-    // Single-page mode — scan all devices in parallel
-    const results = await Promise.all(selectedDevices.map(async (device): Promise<DevicePerformanceResult> => {
-      const { links: _links, ...deviceResult } = await scanDevice(browser!, device, targetUrl);
-      return deviceResult;
-    }));
+    const results = await Promise.all(
+      selectedDevices.map((device) => scanDevice(browser!, device, targetUrl))
+    );
 
     await browser.close();
     browser = null;
@@ -811,7 +562,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     if (browser) {
-      try { await browser.close(); } catch {}
+      try { await browser.close(); } catch { /* ignore */ }
     }
     const message = err instanceof Error ? err.message : "Scan failed";
     if (message.includes("browserType.launch")) {
@@ -820,9 +571,6 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-    return NextResponse.json(
-      { error: `Scan failed: ${message}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: `Scan failed: ${message}` }, { status: 500 });
   }
 }

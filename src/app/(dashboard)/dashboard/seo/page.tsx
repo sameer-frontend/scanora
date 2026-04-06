@@ -1,7 +1,6 @@
 "use client";
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import {
   Search,
   Download,
@@ -21,20 +20,23 @@ import {
   ExternalLink,
   Tag,
   Smartphone,
-  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { WebGuardScoreRing } from "@/components/dashboard/score-ring";
 import { ScanEmptyState, ScanLoadingState, ScanErrorState } from "@/components/dashboard/scan-states";
-import { DeviceTabs } from "@/components/dashboard/device-tabs";
-import { ScreenshotCard } from "@/components/dashboard/screenshot-card";
-import { CrossDeviceComparison } from "@/components/dashboard/cross-device-comparison";
 import { useScan } from "@/lib/scan-context";
-import { fadeUp } from "@/lib/constants";
-import type { DeviceType, DeviceSeoResult, SeoData, SeoIssue } from "@/lib/types";
+import type { DeviceType, DeviceSeoResult, SeoData } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+const WebGuardScoreRing = lazy(() => import("@/components/dashboard/score-ring").then(m => ({ default: m.WebGuardScoreRing })));
+const DeviceTabs = lazy(() => import("@/components/dashboard/device-tabs").then(m => ({ default: m.DeviceTabs })));
+const ScreenshotCard = lazy(() => import("@/components/dashboard/screenshot-card").then(m => ({ default: m.ScreenshotCard })));
+const CrossDeviceComparison = lazy(() => import("@/components/dashboard/cross-device-comparison").then(m => ({ default: m.CrossDeviceComparison })));
+
+function LazyFallback() {
+  return <div className="h-32 animate-pulse rounded-xl bg-slate-800/40" />;
+}
 
 const severityConfig: Record<string, { icon: typeof CheckCircle2; color: string; bg: string; border: string; label: string }> = {
   critical: { icon: XCircle, color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", label: "Critical" },
@@ -70,33 +72,6 @@ function PageSeoSections({
 
   return (
     <div className="space-y-4">
-      {/* Score + Summary */}
-      <div className="flex items-center gap-4 rounded-lg border border-slate-800/50 bg-slate-800/20 p-4">
-        <WebGuardScoreRing score={pageData.score} size={72} />
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-white mb-1">SEO Score</div>
-          <p className="text-xs text-slate-400 line-clamp-2">{pageData.summary}</p>
-        </div>
-        <div className="grid grid-cols-2 gap-2 text-center shrink-0">
-          <div className="rounded-md bg-red-500/10 border border-red-500/20 px-3 py-1.5">
-            <div className="text-sm font-bold text-red-400">{critCount}</div>
-            <div className="text-[10px] text-slate-500">Critical</div>
-          </div>
-          <div className="rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-1.5">
-            <div className="text-sm font-bold text-amber-400">{warnCount}</div>
-            <div className="text-[10px] text-slate-500">Warnings</div>
-          </div>
-          <div className="rounded-md bg-blue-500/10 border border-blue-500/20 px-3 py-1.5">
-            <div className="text-sm font-bold text-blue-400">{infoCount}</div>
-            <div className="text-[10px] text-slate-500">Info</div>
-          </div>
-          <div className="rounded-md bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5">
-            <div className="text-sm font-bold text-emerald-400">{passCount}</div>
-            <div className="text-[10px] text-slate-500">Passed</div>
-          </div>
-        </div>
-      </div>
-
       {/* Heading Structure */}
       <Card>
         <CardHeader className="pb-2">
@@ -113,40 +88,40 @@ function PageSeoSections({
           </div>
         </CardHeader>
         <CardContent>
-            {pageData.headings.headings.length === 0 ? (
-              <p className="text-sm text-slate-500">No headings found on the page.</p>
-            ) : (
-              <div className="space-y-1">
-                {pageData.headings.headings.map((h, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-slate-800/30"
-                    style={{ paddingLeft: `${(h.level - 1) * 20 + 8}px` }}
+          {pageData.headings.headings.length === 0 ? (
+            <p className="text-sm text-slate-500">No headings found on the page.</p>
+          ) : (
+            <div className="space-y-1">
+              {pageData.headings.headings.map((h, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-slate-800/30"
+                  style={{ paddingLeft: `${(h.level - 1) * 20 + 8}px` }}
+                >
+                  <Badge
+                    variant={h.level === 1 ? "success" : "secondary"}
+                    className="text-[10px] shrink-0 w-8 justify-center"
                   >
-                    <Badge
-                      variant={h.level === 1 ? "success" : "secondary"}
-                      className="text-[10px] shrink-0 w-8 justify-center"
-                    >
-                      H{h.level}
-                    </Badge>
-                    <span className="text-sm text-slate-300 truncate">{h.text}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {pageData.headings.issues.length > 0 && (
-              <div className="mt-3 space-y-1">
-                {pageData.headings.issues.map((issue, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-amber-400">
-                    <AlertTriangle className="h-3 w-3 shrink-0" /> {issue}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    H{h.level}
+                  </Badge>
+                  <span className="text-sm text-slate-300 truncate">{h.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {pageData.headings.issues.length > 0 && (
+            <div className="mt-3 space-y-1">
+              {pageData.headings.issues.map((issue, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs text-amber-400">
+                  <AlertTriangle className="h-3 w-3 shrink-0" /> {issue}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Open Graph and Twitter Card */}
+      {/* Open Graph and Twitter Card */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
@@ -161,37 +136,37 @@ function PageSeoSections({
             </div>
           </CardHeader>
           <CardContent>
-              <div className="space-y-2">
-                {([
-                  ["og:title", pageData.openGraph.title],
-                  ["og:description", pageData.openGraph.description],
-                  ["og:image", pageData.openGraph.image],
-                  ["og:url", pageData.openGraph.url],
-                  ["og:type", pageData.openGraph.type],
-                  ["og:site_name", pageData.openGraph.siteName],
-                ] as [string, string | undefined][]).map(([name, value]) => (
-                  <div key={name} className="flex items-start gap-2 rounded-md bg-slate-800/20 px-3 py-2">
-                    <span className="text-xs font-mono text-slate-500 shrink-0 w-28">{name}</span>
-                    {value ? (
-                      name === "og:image" ? (
-                        <a href={value} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 truncate hover:underline flex items-center gap-1">
-                          <ExternalLink className="h-3 w-3 shrink-0" />{value.slice(0, 60)}
-                        </a>
-                      ) : (
-                        <span className="text-xs text-slate-300 truncate">{value}</span>
-                      )
+            <div className="space-y-2">
+              {([
+                ["og:title", pageData.openGraph.title],
+                ["og:description", pageData.openGraph.description],
+                ["og:image", pageData.openGraph.image],
+                ["og:url", pageData.openGraph.url],
+                ["og:type", pageData.openGraph.type],
+                ["og:site_name", pageData.openGraph.siteName],
+              ] as [string, string | undefined][]).map(([name, value]) => (
+                <div key={name} className="flex items-start gap-2 rounded-md bg-slate-800/20 px-3 py-2">
+                  <span className="text-xs font-mono text-slate-500 shrink-0 w-28">{name}</span>
+                  {value ? (
+                    name === "og:image" ? (
+                      <a href={value} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 truncate hover:underline flex items-center gap-1">
+                        <ExternalLink className="h-3 w-3 shrink-0" />{value.slice(0, 60)}
+                      </a>
                     ) : (
-                      <span className="text-xs text-red-400">Missing</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {pageData.openGraph.image && (
-                <div className="mt-3 rounded-lg overflow-hidden border border-slate-800">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={pageData.openGraph.image} alt="OG Image Preview" className="w-full h-auto max-h-48 object-contain" />
+                      <span className="text-xs text-slate-300 truncate">{value}</span>
+                    )
+                  ) : (
+                    <span className="text-xs text-red-400">Missing</span>
+                  )}
                 </div>
-              )}
+              ))}
+            </div>
+            {pageData.openGraph.image && (
+              <div className="mt-3 rounded-lg overflow-hidden border border-slate-800">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={pageData.openGraph.image} alt="OG Image Preview" className="w-full h-auto max-h-48 object-contain" />
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -208,23 +183,23 @@ function PageSeoSections({
             </div>
           </CardHeader>
           <CardContent>
-              <div className="space-y-2">
-                {([
-                  ["twitter:card", pageData.twitterCard.card],
-                  ["twitter:title", pageData.twitterCard.title],
-                  ["twitter:description", pageData.twitterCard.description],
-                  ["twitter:image", pageData.twitterCard.image],
-                ] as [string, string | undefined][]).map(([name, value]) => (
-                  <div key={name} className="flex items-start gap-2 rounded-md bg-slate-800/20 px-3 py-2">
-                    <span className="text-xs font-mono text-slate-500 shrink-0 w-32">{name}</span>
-                    {value ? (
-                      <span className="text-xs text-slate-300 truncate">{value}</span>
-                    ) : (
-                      <span className="text-xs text-red-400">Missing</span>
-                    )}
-                  </div>
-                ))}
-              </div>
+            <div className="space-y-2">
+              {([
+                ["twitter:card", pageData.twitterCard.card],
+                ["twitter:title", pageData.twitterCard.title],
+                ["twitter:description", pageData.twitterCard.description],
+                ["twitter:image", pageData.twitterCard.image],
+              ] as [string, string | undefined][]).map(([name, value]) => (
+                <div key={name} className="flex items-start gap-2 rounded-md bg-slate-800/20 px-3 py-2">
+                  <span className="text-xs font-mono text-slate-500 shrink-0 w-32">{name}</span>
+                  {value ? (
+                    <span className="text-xs text-slate-300 truncate">{value}</span>
+                  ) : (
+                    <span className="text-xs text-red-400">Missing</span>
+                  )}
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -402,20 +377,20 @@ function PageSeoSections({
           </div>
         </CardHeader>
         <CardContent>
-            {pageData.metaTags.length === 0 ? (
-              <p className="text-sm text-slate-500">No meta tags found.</p>
-            ) : (
-              <div className="space-y-1 max-h-64 overflow-y-auto">
-                {pageData.metaTags.map((tag, i) => (
-                  <div key={i} className="flex items-start gap-3 rounded-md bg-slate-800/20 px-3 py-2">
-                    <span className="text-xs font-mono text-slate-500 shrink-0 min-w-32 truncate">{tag.name}</span>
-                    <span className="text-xs text-slate-300 flex-1 break-all">{tag.content}</span>
-                    {tag.status === "good" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />}
-                    {tag.status === "warning" && <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />}
-                  </div>
-                ))}
-              </div>
-            )}
+          {pageData.metaTags.length === 0 ? (
+            <p className="text-sm text-slate-500">No meta tags found.</p>
+          ) : (
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              {pageData.metaTags.map((tag, i) => (
+                <div key={i} className="flex items-start gap-3 rounded-md bg-slate-800/20 px-3 py-2">
+                  <span className="text-xs font-mono text-slate-500 shrink-0 min-w-32 truncate">{tag.name}</span>
+                  <span className="text-xs text-slate-300 flex-1 break-all">{tag.content}</span>
+                  {tag.status === "good" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />}
+                  {tag.status === "warning" && <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />}
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -491,9 +466,7 @@ export default function SeoPage() {
   const {
     seoData: results,
     seoLoading: loading,
-    seoStreaming: streaming,
     seoError: error,
-    scanMode,
   } = useScan();
 
   const [activeDevice, setActiveDevice] = useState<DeviceType | null>(null);
@@ -502,8 +475,6 @@ export default function SeoPage() {
   const currentDevice = activeDevice ?? results?.[0]?.device.type ?? null;
   const activeResult: DeviceSeoResult | undefined =
     results?.find((r) => r.device.type === currentDevice);
-
-  const isMultiPage = !!(activeResult?.pages && activeResult.pages.length > 1);
 
   // Empty state
   if (!results && !loading && !error) {
@@ -527,13 +498,7 @@ export default function SeoPage() {
         accentColor="orange"
         title="Analyzing SEO&#8230;"
         description="Scanning meta tags, headings, Open Graph, structured data, and more."
-      >
-        {scanMode === "full-site" && (
-          <p className="text-orange-400/80 text-xs mt-3">
-            Full-site crawl in progress &#8212; scanning all discovered pages&#8230;
-          </p>
-        )}
-      </ScanLoadingState>
+      />
     );
   }
 
@@ -546,35 +511,16 @@ export default function SeoPage() {
 
   const data = activeResult.data;
 
-  // Aggregate issues from all pages for cross-page counts
-  const allIssues: SeoIssue[] = (() => {
-    if (isMultiPage) {
-      const merged: SeoIssue[] = [];
-      let globalIdx = 0;
-      for (const pg of activeResult.pages!) {
-        for (const issue of pg.data.issues) {
-          merged.push({ ...issue, id: `seo-pg-${globalIdx++}` });
-        }
-      }
-      return merged;
-    }
-    return data.issues;
-  })();
-
-  const critCount = allIssues.filter((i) => i.severity === "critical").length;
-  const warnCount = allIssues.filter((i) => i.severity === "warning").length;
-  const infoCount = allIssues.filter((i) => i.severity === "info").length;
-  const passCount = allIssues.filter((i) => i.severity === "pass").length;
-
-  // Average score for multi-page
-  const avgScore = isMultiPage
-    ? Math.round(activeResult.pages!.reduce((s, p) => s + p.data.score, 0) / activeResult.pages!.length)
-    : data.score;
+  const critCount = data.issues.filter((i) => i.severity === "critical").length;
+  const warnCount = data.issues.filter((i) => i.severity === "warning").length;
+  const infoCount = data.issues.filter((i) => i.severity === "info").length;
+  const passCount = data.issues.filter((i) => i.severity === "pass").length;
+  const avgScore = data.score;
 
   return (
-    <motion.div initial="hidden" animate="visible" className="space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <motion.div variants={fadeUp} custom={0} className="flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 border border-orange-500/20">
             <Search className="h-5 w-5 text-orange-400" />
@@ -587,10 +533,10 @@ export default function SeoPage() {
         <Button variant="outline" size="sm">
           <Download className="h-4 w-4 mr-1" /> Export
         </Button>
-      </motion.div>
+      </div>
 
       {/* Device Tabs */}
-      <motion.div variants={fadeUp} custom={1}>
+      <Suspense fallback={<LazyFallback />}>
         <DeviceTabs
           results={results}
           currentDevice={currentDevice}
@@ -598,33 +544,37 @@ export default function SeoPage() {
           accentColor="orange"
           scoreThreshold={80}
         />
-      </motion.div>
+      </Suspense>
 
       {/* Score + Screenshot + Key Info */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         {/* Screenshot */}
-        <motion.div variants={fadeUp} custom={2} className="lg:col-span-2">
-          <ScreenshotCard
-            screenshot={activeResult.screenshot}
-            deviceName={activeResult.device.name}
-            deviceType={activeResult.device.type}
-            altText={`Screenshot of ${data.url}`}
-            accentColor="orange"
-            screenshotOpen={screenshotOpen}
-            onToggleScreenshot={() => setScreenshotOpen(!screenshotOpen)}
-            collapsedMaxH="max-h-70"
-            showDownload={false}
-          />
-        </motion.div>
+        <div className="lg:col-span-2">
+          <Suspense fallback={<LazyFallback />}>
+            <ScreenshotCard
+              screenshot={activeResult.screenshot}
+              deviceName={activeResult.device.name}
+              deviceType={activeResult.device.type}
+              altText={`Screenshot of ${data.url}`}
+              accentColor="orange"
+              screenshotOpen={screenshotOpen}
+              onToggleScreenshot={() => setScreenshotOpen(!screenshotOpen)}
+              collapsedMaxH="max-h-70"
+              showDownload={false}
+            />
+          </Suspense>
+        </div>
 
         {/* Score */}
-        <motion.div variants={fadeUp} custom={3}>
+        <div>
           <Card className="h-full">
             <CardContent className="flex flex-col items-center justify-center p-6">
               <div className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3">
-                {isMultiPage ? "Avg SEO Score" : "SEO Score"}
+                SEO Score
               </div>
-              <WebGuardScoreRing score={avgScore} size={140} />
+              <Suspense fallback={<div className="h-35 w-35 animate-pulse rounded-full bg-slate-800/40" />}>
+                <WebGuardScoreRing score={avgScore} size={140} />
+              </Suspense>
               <div className="mt-4 grid grid-cols-2 gap-2 w-full text-center text-xs">
                 <div className="rounded-md bg-red-500/10 border border-red-500/20 p-1.5">
                   <div className="text-red-400 font-bold">{critCount}</div>
@@ -645,10 +595,10 @@ export default function SeoPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* Key SEO Elements */}
-        <motion.div variants={fadeUp} custom={4} className="space-y-3">
+        <div className="space-y-3">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
@@ -698,11 +648,11 @@ export default function SeoPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
 
       {/* Quick Stats Row */}
-      <motion.div variants={fadeUp} custom={5}>
+      <div>
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
           {[
             { label: "Headings", value: data.headings.headings.length.toString(), icon: Heading1, ok: data.headings.hasH1 && data.headings.hierarchyValid },
@@ -728,84 +678,43 @@ export default function SeoPage() {
             </Card>
           ))}
         </div>
-      </motion.div>
+      </div>
 
-      {/* Per-page detail sections (multi-page) OR inline (single page) */}
-      {(isMultiPage || streaming) ? (
-        <motion.div variants={fadeUp} custom={6} className="space-y-6">
-          <div className="flex items-center gap-2">
-            <Globe className="h-5 w-5 text-orange-400" />
-            <h2 className="text-lg font-bold text-white">Page-by-Page Results</h2>
-            <Badge variant="secondary">{activeResult.pages?.length ?? 0} pages scanned</Badge>
-          </div>
-          {activeResult.pages?.map((pg, idx) => (
-            <Card key={pg.url} className="overflow-hidden">
-              <CardHeader className="border-b border-slate-800">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Globe className="h-4 w-4 text-orange-400 shrink-0" />
-                    <span className="text-sm font-medium text-white truncate">{pg.url}</span>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <WebGuardScoreRing score={pg.data.score} size={48} />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <PageSeoSections
-                  pageData={pg.data}
-                  prefix={`pg${idx}-`}
-                />
-              </CardContent>
-            </Card>
-          ))}
-
-          {/* Streaming loader */}
-          {streaming && (
-            <Card className="border-orange-500/20 bg-orange-500/5">
-              <CardContent className="py-6">
-                <div className="flex items-center justify-center gap-3">
-                  <Loader2 className="h-5 w-5 text-orange-400 animate-spin" />
-                  <span className="text-sm text-orange-300">Scanning more pages…</span>
-                  <Badge variant="secondary" className="text-xs">{activeResult.pages?.length ?? 0} scanned so far</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </motion.div>
-      ) : (
-        <motion.div variants={fadeUp} custom={6}>
-          <PageSeoSections
-            pageData={data}
-            prefix=""
-          />
-        </motion.div>
-      )}
+      {/* Per-page detail sections */}
+      <div>
+        <PageSeoSections
+          pageData={data}
+          prefix=""
+        />
+      </div>
 
       {/* Cross-device Comparison */}
       {results.length > 1 && (
-        <motion.div variants={fadeUp} custom={7}>
+        <Suspense fallback={<LazyFallback />}>
           <CrossDeviceComparison
             results={results}
             currentDevice={currentDevice}
             onDeviceChange={setActiveDevice}
             accentColor="orange"
             scoreThreshold={80}
-            renderDetails={(r) => (
-              <div className="mt-2 space-y-0.5 text-[10px]">
-                <div className="flex justify-between text-slate-400">
-                  <span>Issues</span>
-                  <span className="text-slate-300">{r.data.issues.filter((i) => i.severity !== "pass").length}</span>
+            renderDetails={(r) => {
+              const d = r as DeviceSeoResult;
+              return (
+                <div className="mt-2 space-y-0.5 text-[10px]">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Issues</span>
+                    <span className="text-slate-300">{d.data.issues.filter((i) => i.severity !== "pass").length}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Passed</span>
+                    <span className="text-emerald-400">{d.data.issues.filter((i) => i.severity === "pass").length}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Passed</span>
-                  <span className="text-emerald-400">{r.data.issues.filter((i) => i.severity === "pass").length}</span>
-                </div>
-              </div>
-            )}
+              );
+            }}
           />
-        </motion.div>
+        </Suspense>
       )}
-    </motion.div>
+    </div>
   );
 }

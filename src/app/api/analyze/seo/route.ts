@@ -11,7 +11,6 @@ import type {
 } from "@/lib/types";
 
 import { DEVICE_PROFILES } from "@/lib/types";
-import { fetchSitemapUrls } from "@/lib/sitemap";
 import {
   launchBrowser,
   applyStealthScripts,
@@ -20,21 +19,8 @@ import {
 } from "@/lib/browser-helpers";
 
 export const maxDuration = 300;
-// ── Page-level SEO extraction (runs inside browser) ───────────
 
-/** Strip trailing slash + fragment so /foo/ and /foo are treated as the same page */
-function normalizeUrl(raw: string): string {
-  try {
-    const u = new URL(raw);
-    u.hash = "";
-    if (u.pathname.length > 1 && u.pathname.endsWith("/")) {
-      u.pathname = u.pathname.slice(0, -1);
-    }
-    return u.toString();
-  } catch {
-    return raw;
-  }
-}
+// ── Page-level SEO extraction (runs inside browser) ─────────────────────
 
 interface RawSeoData {
   title: string;
@@ -514,7 +500,7 @@ async function scanDevice(
   browser: Awaited<ReturnType<typeof launchBrowser>>,
   device: DeviceProfile,
   targetUrl: string
-): Promise<DeviceSeoResult & { links: string[] }> {
+): Promise<DeviceSeoResult> {
   const context = await browser.newContext(getStealthContextOptions(device));
   const page = await context.newPage();
   await applyStealthScripts(page);
@@ -522,7 +508,9 @@ async function scanDevice(
   const nav = await stealthGoto(page, targetUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
   if (!nav.success) {
     await context.close();
-    throw new Error(`Blocked by ${nav.challengeDetected} on ${targetUrl}. The site requires interactive CAPTCHA.`);
+    throw new Error(
+      `Blocked by ${nav.challengeDetected} on ${targetUrl}. The site requires interactive CAPTCHA.`
+    );
   }
 
   // Brief wait for images to load for alt-text analysis
@@ -530,145 +518,27 @@ async function scanDevice(
 
   const raw: RawSeoData = await page.evaluate(extractSeoData, targetUrl);
 
-  // Extract crawlable same-origin links for full-site mode
-  const origin = new URL(targetUrl).origin;
-  const discoveredLinks: string[] = await page.evaluate((orig: string) => {
-    return Array.from(document.querySelectorAll("a[href]"))
-      .map((a) => {
-        try { return new URL((a as HTMLAnchorElement).href, document.location.href).href; }
-        catch { return ""; }
-      })
-      .filter(
-        (href) => href.startsWith(orig) && !href.includes("#") &&
-          !href.match(/\.(pdf|zip|png|jpg|jpeg|gif|svg|webp|mp4|mp3)$/i)
-      );
-  }, origin);
-
-  const screenshotBuf = await page.screenshot({
-    fullPage: true,
-    type: "jpeg",
-    quality: 70,
-  });
+  const screenshotBuf = await page.screenshot({ fullPage: true, type: "jpeg", quality: 70 });
   const screenshot = `data:image/jpeg;base64,${screenshotBuf.toString("base64")}`;
 
   await context.close();
 
-  const data = analyzeSeo(raw, targetUrl);
-
-  return { device, screenshot, data, links: [...new Set(discoveredLinks.map(normalizeUrl))] };
+  return { device, screenshot, data: analyzeSeo(raw, targetUrl) };
 }
 
-/** Scan a single page for SEO data (no screenshot) */
-async function scanSeoPage(
-  browser: Awaited<ReturnType<typeof launchBrowser>>,
-  device: DeviceProfile,
-  targetUrl: string
-): Promise<SeoData> {
-  const context = await browser.newContext(getStealthContextOptions(device));
-  const page = await context.newPage();
-  await applyStealthScripts(page);
 
-  const nav = await stealthGoto(page, targetUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
-  if (!nav.success) {
-    await context.close();
-    throw new Error(`Blocked by ${nav.challengeDetected} on ${targetUrl}`);
-  }
-
-  await page.waitForTimeout(500);
-  const raw: RawSeoData = await page.evaluate(extractSeoData, targetUrl);
-  await context.close();
-  return analyzeSeo(raw, targetUrl);
-}
 
 // ── POST handler ──────────────────────────────────────────────
 
-function streamFullSiteScan(
-  parsedUrl: URL,
-  selectedDevices: DeviceProfile[]
-) {
-  const targetUrl = parsedUrl.toString();
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder();
-      const emit = (data: unknown) => {
-        try {
-          controller.enqueue(encoder.encode(JSON.stringify(data) + "\n"));
-        } catch { /* stream closed by client */ }
-      };
-
-      let sitemapPages: string[] = [];
-      try {
-        sitemapPages = await fetchSitemapUrls(parsedUrl.origin);
-      } catch { /* fall back to link crawling */ }
-
-      let browser: Awaited<ReturnType<typeof launchBrowser>> | null = null;
-      try {
-        browser = await launchBrowser();
-        const PAGE_CONCURRENCY = 5;
-
-        await Promise.all(
-          selectedDevices.map(async (device) => {
-            const { links, ...deviceResult } = await scanDevice(browser!, device, targetUrl);
-
-            const normTarget = normalizeUrl(targetUrl);
-            const discoveredPages = [...new Set(
-              (sitemapPages.length > 0 ? sitemapPages : links)
-                .map(normalizeUrl)
-                .filter((l) => l !== normTarget)
-            )];
-
-            // Emit main page result immediately
-            emit({
-              type: "init",
-              deviceType: device.type,
-              device: deviceResult.device,
-              screenshot: deviceResult.screenshot,
-              data: deviceResult.data,
-              pagesTotal: discoveredPages.length + 1,
-            });
-
-            if (discoveredPages.length > 0) {
-              let idx = 0;
-              async function worker() {
-                while (idx < discoveredPages.length) {
-                  const pageUrl = discoveredPages[idx++];
-                  try {
-                    const pageData = await scanSeoPage(browser!, device, pageUrl);
-                    emit({ type: "page", deviceType: device.type, page: { url: pageUrl, data: pageData } });
-                  } catch { /* skip failed pages */ }
-                }
-              }
-              await Promise.all(
-                Array.from({ length: Math.min(PAGE_CONCURRENCY, discoveredPages.length) }, () => worker())
-              );
-            }
-
-            emit({ type: "device-done", deviceType: device.type });
-          })
-        );
-
-        emit({ type: "done" });
-        await browser.close();
-      } catch (err) {
-        if (browser) try { await browser.close(); } catch {}
-        emit({ type: "error", error: err instanceof Error ? err.message : "Scan failed" });
-      }
-
-      controller.close();
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-store, no-cache",
-    },
-  });
-}
-
 export async function POST(req: NextRequest) {
-  const { url, devices, scanMode } = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  const { url, devices } = body as { url?: unknown; devices?: unknown };
 
   if (!url || typeof url !== "string") {
     return NextResponse.json({ error: "URL is required" }, { status: 400 });
@@ -683,23 +553,21 @@ export async function POST(req: NextRequest) {
 
   const selectedDevices: DeviceProfile[] =
     Array.isArray(devices) && devices.length > 0
-      ? DEVICE_PROFILES.filter((d) => devices.includes(d.type))
+      ? DEVICE_PROFILES.filter((d) => (devices as string[]).includes(d.type))
       : DEVICE_PROFILES;
 
-  if (scanMode === "full-site") {
-    return streamFullSiteScan(parsedUrl, selectedDevices);
+  if (selectedDevices.length === 0) {
+    return NextResponse.json({ error: "No valid devices specified" }, { status: 400 });
   }
 
-  let browser;
+  let browser: Awaited<ReturnType<typeof launchBrowser>> | null = null;
   try {
     browser = await launchBrowser();
     const targetUrl = parsedUrl.toString();
 
-    // Single-page mode — scan all devices in parallel
-    const results = await Promise.all(selectedDevices.map(async (device): Promise<DeviceSeoResult> => {
-      const { links: _links, ...deviceResult } = await scanDevice(browser!, device, targetUrl);
-      return deviceResult;
-    }));
+    const results = await Promise.all(
+      selectedDevices.map((device) => scanDevice(browser!, device, targetUrl))
+    );
 
     await browser.close();
     browser = null;
@@ -709,7 +577,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     if (browser) {
-      try { await browser.close(); } catch {}
+      try { await browser.close(); } catch { /* ignore */ }
     }
     const message = err instanceof Error ? err.message : "Scan failed";
     if (message.includes("browserType.launch")) {
@@ -718,9 +586,6 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-    return NextResponse.json(
-      { error: `Scan failed: ${message}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: `Scan failed: ${message}` }, { status: 500 });
   }
 }

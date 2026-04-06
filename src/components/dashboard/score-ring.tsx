@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useId } from "react";
 
 interface WebGuardScoreRingProps {
   score: number;
@@ -15,6 +15,7 @@ export function WebGuardScoreRing({
   strokeWidth = 10,
   showScoreText = true,
 }: WebGuardScoreRingProps) {
+  const id = useId();
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
@@ -27,12 +28,13 @@ export function WebGuardScoreRing({
   };
 
   const colors = getColor(score);
+  const gradientId = `scoreGradient-${id}`;
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
         <defs>
-          <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor={colors.start} />
             <stop offset="100%" stopColor={colors.end} />
           </linearGradient>
@@ -47,35 +49,24 @@ export function WebGuardScoreRing({
           strokeWidth={strokeWidth}
         />
         {/* Score arc */}
-        <motion.circle
+        <circle
           cx={center}
           cy={center}
           r={radius}
           fill="none"
-          stroke="url(#scoreGradient)"
+          stroke={`url(#${gradientId})`}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
+          strokeDashoffset={offset}
         />
       </svg>
-      {
-        showScoreText && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.8, duration: 0.5 }}
-              className="text-4xl font-bold text-white"
-            >
-              {score}
-            </motion.div>
-            <div className="text-xs text-slate-400">out of 100</div>
-          </div>
-        )
-      }
+      {showScoreText && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="text-4xl font-bold text-white">{score}</div>
+          <div className="text-xs text-slate-400">out of 100</div>
+        </div>
+      )}
     </div>
   );
 }

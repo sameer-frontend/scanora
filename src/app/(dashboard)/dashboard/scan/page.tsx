@@ -9,8 +9,6 @@ import {
   Tablet,
   Laptop,
   Monitor,
-  File,
-  FileStack,
   Loader2,
   Globe,
 } from "lucide-react";
@@ -33,8 +31,6 @@ export default function ScanPage() {
   const {
     startScan,
     scanning,
-    scanMode,
-    setScanMode,
     selectedDevices,
     setSelectedDevices,
   } = useScan();
@@ -85,57 +81,8 @@ export default function ScanPage() {
         </Card>
       </motion.div>
 
-      {/* Crawl Mode */}
-      <motion.div variants={fadeUp} custom={2}>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Crawl Mode</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setScanMode("single")}
-                className={cn(
-                  "flex flex-col items-center gap-2 rounded-lg border p-5 transition-all",
-                  scanMode === "single"
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                    : "border-slate-800 bg-slate-900/50 text-slate-400 hover:bg-slate-800/50"
-                )}
-              >
-                <File className={cn("h-6 w-6", scanMode === "single" ? "text-emerald-400" : "text-slate-500")} />
-                <span className="text-sm font-medium">Single Page</span>
-                <span className="text-[11px] text-slate-500">Scan only the entered URL</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setScanMode("full-site")}
-                className={cn(
-                  "flex flex-col items-center gap-2 rounded-lg border p-5 transition-all",
-                  scanMode === "full-site"
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                    : "border-slate-800 bg-slate-900/50 text-slate-400 hover:bg-slate-800/50"
-                )}
-              >
-                <FileStack className={cn("h-6 w-6", scanMode === "full-site" ? "text-emerald-400" : "text-slate-500")} />
-                <span className="text-sm font-medium">Full Site</span>
-                <span className="text-[11px] text-slate-500">Crawl entire site</span>
-              </button>
-            </div>
-            {scanMode === "full-site" && (
-              <div className="mt-3 flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
-                <Globe className="h-4 w-4 text-amber-400 shrink-0" />
-                <span className="text-xs text-amber-300">
-                  Full-site crawl will discover and scan all same-origin pages found on the entered URL.
-                </span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
-
       {/* Devices */}
-      <motion.div variants={fadeUp} custom={3}>
+      <motion.div variants={fadeUp} custom={2}>
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Devices</CardTitle>

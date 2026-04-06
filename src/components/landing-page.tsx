@@ -220,7 +220,7 @@ export default function LandingPage() {
               <Check className="h-4 w-4 text-emerald-500" /> Multi-device testing
             </span>
             <span className="flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-emerald-500" /> Single page &amp; full site crawl
+              <Check className="h-4 w-4 text-emerald-500" /> Real browser testing
             </span>
           </motion.div>
         </motion.div>
@@ -387,7 +387,7 @@ export default function LandingPage() {
               step: "01",
               title: "Enter Your URL",
               description:
-                "Paste any website URL, choose between single page or full site crawl, and select which devices to test (Mobile, Tablet, Laptop, Desktop).",
+                "Paste any website URL and select which devices to test (Mobile, Tablet, Laptop, Desktop). WebGuard runs a deep single-page scan across all chosen viewports.",
               icon: Search,
             },
             {
