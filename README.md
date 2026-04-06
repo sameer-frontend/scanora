@@ -125,7 +125,7 @@ All routes accept `POST` with `{ url: string }` and scan across 4 device viewpor
 
 Deploy to Vercel with zero configuration:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-repo/scanora)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/sameer-frontend/scanora)
 
 The `vercel.json` configures serverless functions with 2048 MB memory and 300s max duration for browser automation.
 

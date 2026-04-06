@@ -2,6 +2,10 @@
   "name": "scanora",
   "version": "0.1.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sameer-frontend/scanora.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -22,6 +26,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@sparticuz/chromium-min": "^143.0.4",
+    "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",

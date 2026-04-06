@@ -547,6 +547,7 @@ export default function DocsPage() {
               <Link href="/#how-it-works" className="hover:text-white transition-colors">How It Works</Link>
               <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
               <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+              <a href="https://github.com/sameer-frontend/scanora" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub</a>
             </div>
             <p className="text-sm text-slate-500">
               © {new Date().getFullYear()} Scanora. Free &amp; open source.
