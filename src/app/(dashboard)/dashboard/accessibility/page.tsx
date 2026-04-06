@@ -55,6 +55,9 @@ export default function AccessibilityPage() {
     accessibilityLoading: loading,
     accessibilityError: error,
     scanAccessibility,
+    performanceData,
+    seoData,
+    scannedUrl,
   } = useScan();
 
   const [activeDevice, setActiveDevice] = useState<DeviceType | null>(null);
@@ -198,7 +201,11 @@ export default function AccessibilityPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => {
+            import("@/lib/export-pdf").then(({ exportPdfReport }) =>
+              exportPdfReport({ url: scannedUrl, accessibilityData: results, performanceData, seoData })
+            );
+          }}>
             <Download className="h-4 w-4 mr-1" /> Export PDF
           </Button>
         </div>

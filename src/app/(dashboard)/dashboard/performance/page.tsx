@@ -58,6 +58,9 @@ export default function PerformancePage() {
     performanceLoading: loading,
     performanceError: error,
     scanPerformance,
+    accessibilityData,
+    seoData,
+    scannedUrl,
   } = useScan();
 
   const [activeDevice, setActiveDevice] = useState<DeviceType | null>(null);
@@ -126,8 +129,12 @@ export default function PerformancePage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-1" /> Export
+          <Button variant="outline" size="sm" onClick={() => {
+            import("@/lib/export-pdf").then(({ exportPdfReport }) =>
+              exportPdfReport({ url: scannedUrl, accessibilityData, performanceData: results, seoData })
+            );
+          }}>
+            <Download className="h-4 w-4 mr-1" /> Export PDF
           </Button>
         </div>
       </div>

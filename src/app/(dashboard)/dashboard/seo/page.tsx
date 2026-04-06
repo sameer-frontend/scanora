@@ -267,7 +267,7 @@ function PageSeoSections({
             </div>
             {pageData.images.total > 0 && (
               <div className="mt-3">
-                <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+                <div className="flex items-center justify-between text-xs text-white mb-1">
                   <span>Alt text coverage</span>
                   <span className={pageData.images.withoutAlt === 0 ? "text-emerald-400" : "text-amber-400"}>
                     {pageData.images.total > 0 ? Math.round((pageData.images.withAlt / pageData.images.total) * 100) : 100}%
@@ -303,7 +303,7 @@ function PageSeoSections({
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <Globe className="h-4 w-4 text-orange-400" />
-              <span className="text-xs font-medium text-slate-400">Canonical URL</span>
+              <span className="text-xs font-medium text-white">Canonical URL</span>
             </div>
             {pageData.canonical.url ? (
               <a href={pageData.canonical.url} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 hover:underline break-all">
@@ -318,7 +318,7 @@ function PageSeoSections({
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <Smartphone className="h-4 w-4 text-orange-400" />
-              <span className="text-xs font-medium text-slate-400">Viewport</span>
+              <span className="text-xs font-medium text-white">Viewport</span>
             </div>
             {pageData.viewport.hasTag ? (
               <span className="text-xs text-emerald-400">{pageData.viewport.content}</span>
@@ -331,7 +331,7 @@ function PageSeoSections({
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <Globe className="h-4 w-4 text-orange-400" />
-              <span className="text-xs font-medium text-slate-400">Language</span>
+              <span className="text-xs font-medium text-white">Language</span>
             </div>
             {pageData.language.hasLang ? (
               <span className="text-xs text-emerald-400">lang=&quot;{pageData.language.value}&quot;</span>
@@ -344,7 +344,7 @@ function PageSeoSections({
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <Code2 className="h-4 w-4 text-orange-400" />
-              <span className="text-xs font-medium text-slate-400">Structured Data</span>
+              <span className="text-xs font-medium text-white">Structured Data</span>
             </div>
             {pageData.structuredData.hasJsonLd ? (
               <div>
@@ -415,7 +415,7 @@ function PageSeoSections({
                   "rounded-md px-3 py-1.5 text-xs font-medium transition-all border",
                   auditTab === tab
                     ? "bg-orange-500/10 border-orange-500/25 text-orange-400"
-                    : "bg-slate-900/50 border-slate-800 text-slate-400 hover:text-white"
+                    : "bg-slate-900/50 border-slate-800 text-white hover:text-white"
                 )}
               >
                 {label} ({count})
@@ -440,7 +440,7 @@ function PageSeoSections({
                           <span className="text-sm font-medium text-white">{issue.title}</span>
                           <Badge variant="secondary" className="text-[10px]">{issue.category}</Badge>
                         </div>
-                        <p className="text-xs text-slate-400">{issue.description}</p>
+                        <p className="text-xs text-white">{issue.description}</p>
                         {issue.value && (
                           <div className="mt-2 rounded-md bg-slate-900/60 px-3 py-2 text-xs font-mono text-slate-300 break-all max-h-20 overflow-y-auto">
                             {issue.value}
@@ -466,6 +466,9 @@ export default function SeoPage() {
     seoLoading: loading,
     seoError: error,
     scanSeo,
+    accessibilityData,
+    performanceData,
+    scannedUrl,
   } = useScan();
 
   const [activeDevice, setActiveDevice] = useState<DeviceType | null>(null);
@@ -525,11 +528,15 @@ export default function SeoPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">SEO Analyzer</h1>
-            <p className="text-slate-400 text-sm">Meta &#183; Headings &#183; Open Graph &#183; Structured Data &#183; Links &#183; Images</p>
+            <p className="text-white text-sm">Meta &#183; Headings &#183; Open Graph &#183; Structured Data &#183; Links &#183; Images</p>
           </div>
         </div>
-        <Button variant="outline" size="sm">
-          <Download className="h-4 w-4 mr-1" /> Export
+        <Button variant="outline" size="sm" onClick={() => {
+          import("@/lib/export-pdf").then(({ exportPdfReport }) =>
+            exportPdfReport({ url: scannedUrl, accessibilityData, performanceData, seoData: results })
+          );
+        }}>
+          <Download className="h-4 w-4 mr-1" /> Export PDF
         </Button>
       </div>
 
@@ -567,7 +574,7 @@ export default function SeoPage() {
         <div>
           <Card className="h-full">
             <CardContent className="flex flex-col items-center justify-center p-6">
-              <div className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3">
+              <div className="text-xs font-medium uppercase tracking-wider text-white mb-3">
                 SEO Score
               </div>
               <Suspense fallback={<div className="h-35 w-35 animate-pulse rounded-full bg-slate-800/40" />}>
@@ -576,19 +583,19 @@ export default function SeoPage() {
               <div className="mt-4 grid grid-cols-2 gap-2 w-full text-center text-xs">
                 <div className="rounded-md bg-red-500/10 border border-red-500/20 p-1.5">
                   <div className="text-red-400 font-bold">{critCount}</div>
-                  <div className="text-slate-500">Critical</div>
+                  <div className="text-white">Critical</div>
                 </div>
                 <div className="rounded-md bg-amber-500/10 border border-amber-500/20 p-1.5">
                   <div className="text-amber-400 font-bold">{warnCount}</div>
-                  <div className="text-slate-500">Warnings</div>
+                  <div className="text-white">Warnings</div>
                 </div>
                 <div className="rounded-md bg-blue-500/10 border border-blue-500/20 p-1.5">
                   <div className="text-blue-400 font-bold">{infoCount}</div>
-                  <div className="text-slate-500">Info</div>
+                  <div className="text-white">Info</div>
                 </div>
                 <div className="rounded-md bg-emerald-500/10 border border-emerald-500/20 p-1.5">
                   <div className="text-emerald-400 font-bold">{passCount}</div>
-                  <div className="text-slate-500">Passed</div>
+                  <div className="text-white">Passed</div>
                 </div>
               </div>
             </CardContent>
@@ -601,7 +608,7 @@ export default function SeoPage() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
                 <FileText className="h-4 w-4 text-orange-400" />
-                <span className="text-xs font-medium text-slate-400">Title Tag</span>
+                <span className="text-xs font-medium text-white">Title Tag</span>
                 <span className={cn("text-xs font-bold ml-auto", statusColors[data.title.status])}>
                   {data.title.length} chars
                 </span>
@@ -626,7 +633,7 @@ export default function SeoPage() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Tag className="h-4 w-4 text-orange-400" />
-                <span className="text-xs font-medium text-slate-400">Meta Description</span>
+                <span className="text-xs font-medium text-white">Meta Description</span>
                 <span className={cn("text-xs font-bold ml-auto", statusColors[data.metaDescription.status])}>
                   {data.metaDescription.length} chars
                 </span>
@@ -699,11 +706,11 @@ export default function SeoPage() {
               const d = r as DeviceSeoResult;
               return (
                 <div className="mt-2 space-y-0.5 text-[10px]">
-                  <div className="flex justify-between text-slate-400">
+                  <div className="flex justify-between text-white">
                     <span>Issues</span>
                     <span className="text-slate-300">{d.data.issues.filter((i) => i.severity !== "pass").length}</span>
                   </div>
-                  <div className="flex justify-between text-slate-400">
+                  <div className="flex justify-between text-white">
                     <span>Passed</span>
                     <span className="text-emerald-400">{d.data.issues.filter((i) => i.severity === "pass").length}</span>
                   </div>

@@ -64,7 +64,7 @@ export function ScanForm({ onScan, scanning, accentColor, icon: Icon, title, des
             onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
             placeholder="https://example.com"
             className={cn(
-              "h-11 w-full rounded-lg border border-slate-800 bg-slate-900/50 pl-10 pr-4 text-sm text-white placeholder-white focus:outline-none transition-colors",
+              "h-11 w-full rounded-lg border border-slate-800 bg-slate-900/50 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors",
               `focus:border-${accentColor}-500/50`,
             )}
           />
