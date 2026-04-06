@@ -130,7 +130,7 @@ export default function LandingPage() {
             <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/25">
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-white">WebGuard</span>
+            <span className="text-lg font-bold text-white">Scanora</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
@@ -204,7 +204,7 @@ export default function LandingPage() {
             </Link>
           </motion.div>
 
-          <motion.div variants={fadeUp} custom={4} className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
+          <motion.div variants={fadeUp} custom={4} className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
             <span className="flex items-center gap-1.5">
               <Check className="h-4 w-4 text-emerald-500" /> Completely free, no limits
             </span>
@@ -238,7 +238,7 @@ export default function LandingPage() {
               </div>
               <div className="mx-auto flex items-center gap-2 rounded-md bg-slate-800/80 px-4 py-1 text-xs text-slate-400">
                 <Lock className="h-3 w-3" />
-                webguard.app/dashboard
+                scanora.dev/dashboard
               </div>
             </div>
             {/* Dashboard preview content */}
@@ -315,7 +315,7 @@ export default function LandingPage() {
             Everything your website needs
           </motion.h2>
           <motion.p variants={fadeUp} custom={2} className="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
-            Stop juggling multiple tools. WebGuard combines accessibility auditing,
+            Stop juggling multiple tools. Scanora combines accessibility auditing,
             performance optimization, and SEO analysis in one free platform.
           </motion.p>
         </motion.div>
@@ -382,7 +382,7 @@ export default function LandingPage() {
               step: "01",
               title: "Enter Your URL",
               description:
-                "Paste any website URL and select which devices to test (Mobile, Tablet, Laptop, Desktop). WebGuard runs a deep single-page scan across all chosen viewports.",
+                "Paste any website URL and select which devices to test (Mobile, Tablet, Laptop, Desktop). Scanora runs a deep single-page scan across all chosen viewports.",
               icon: Search,
             },
             {
@@ -454,15 +454,17 @@ export default function LandingPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500">
                 <Shield className="h-4 w-4 text-white" />
               </div>
-              <span className="font-semibold text-white">WebGuard</span>
+              <span className="font-semibold text-white">Scanora</span>
             </div>
             <div className="flex items-center gap-8 text-sm text-slate-400">
               <a href="#features" className="hover:text-white transition-colors">Features</a>
               <Link href="/docs" className="hover:text-white transition-colors">Docs</Link>
               <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
+              <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
             </div>
             <p className="text-sm text-slate-500" suppressHydrationWarning>
-              {`© ${new Date().getFullYear()} WebGuard. Free & open source.`}
+              {`© ${new Date().getFullYear()} Scanora. Free & open source.`}
             </p>
           </div>
         </div>

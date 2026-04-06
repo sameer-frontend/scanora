@@ -28,7 +28,7 @@ import { useScan } from "@/lib/scan-context";
 import type { DeviceType, DeviceSeoResult, SeoData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const WebGuardScoreRing = lazy(() => import("@/components/dashboard/score-ring").then(m => ({ default: m.WebGuardScoreRing })));
+const ScoreRing = lazy(() => import("@/components/dashboard/score-ring").then(m => ({ default: m.ScoreRing })));
 const DeviceTabs = lazy(() => import("@/components/dashboard/device-tabs").then(m => ({ default: m.DeviceTabs })));
 const ScreenshotCard = lazy(() => import("@/components/dashboard/screenshot-card").then(m => ({ default: m.ScreenshotCard })));
 const CrossDeviceComparison = lazy(() => import("@/components/dashboard/cross-device-comparison").then(m => ({ default: m.CrossDeviceComparison })));
@@ -505,7 +505,13 @@ export default function SeoPage() {
 
   // Error
   if (error) {
-    return <ScanErrorState error={error} />;
+    return (
+      <ScanErrorState
+        error={error}
+        onRetry={() => scannedUrl && scanSeo(scannedUrl)}
+        onNewUrl={scanSeo}
+      />
+    );
   }
 
   if (!results || !activeResult) return null;
@@ -533,7 +539,7 @@ export default function SeoPage() {
         </div>
         <Button variant="outline" size="sm" onClick={() => {
           import("@/lib/export-pdf").then(({ exportPdfReport }) =>
-            exportPdfReport({ url: scannedUrl, accessibilityData, performanceData, seoData: results })
+            exportPdfReport({ url: scannedUrl, scope: "seo", accessibilityData, performanceData, seoData: results })
           );
         }}>
           <Download className="h-4 w-4 mr-1" /> Export PDF
@@ -578,7 +584,7 @@ export default function SeoPage() {
                 SEO Score
               </div>
               <Suspense fallback={<div className="h-35 w-35 animate-pulse rounded-full bg-slate-800/40" />}>
-                <WebGuardScoreRing score={avgScore} size={140} />
+                <ScoreRing score={avgScore} size={140} />
               </Suspense>
               <div className="mt-4 grid grid-cols-2 gap-2 w-full text-center text-xs">
                 <div className="rounded-md bg-red-500/10 border border-red-500/20 p-1.5">

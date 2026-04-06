@@ -21,7 +21,7 @@ import { useScan } from "@/lib/scan-context";
 import type { DeviceType, DevicePerformanceResult, AssetFile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const WebGuardScoreRing = lazy(() => import("@/components/dashboard/score-ring").then(m => ({ default: m.WebGuardScoreRing })));
+const ScoreRing = lazy(() => import("@/components/dashboard/score-ring").then(m => ({ default: m.ScoreRing })));
 const DeviceTabs = lazy(() => import("@/components/dashboard/device-tabs").then(m => ({ default: m.DeviceTabs })));
 const ScreenshotCard = lazy(() => import("@/components/dashboard/screenshot-card").then(m => ({ default: m.ScreenshotCard })));
 const CrossDeviceComparison = lazy(() => import("@/components/dashboard/cross-device-comparison").then(m => ({ default: m.CrossDeviceComparison })));
@@ -98,7 +98,13 @@ export default function PerformancePage() {
 
   // Error
   if (error) {
-    return <ScanErrorState error={error} />;
+    return (
+      <ScanErrorState
+        error={error}
+        onRetry={() => scannedUrl && scanPerformance(scannedUrl)}
+        onNewUrl={scanPerformance}
+      />
+    );
   }
 
   if (!results || !activeResult) return null;
@@ -131,7 +137,7 @@ export default function PerformancePage() {
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={() => {
             import("@/lib/export-pdf").then(({ exportPdfReport }) =>
-              exportPdfReport({ url: scannedUrl, accessibilityData, performanceData: results, seoData })
+              exportPdfReport({ url: scannedUrl, scope: "performance", accessibilityData, performanceData: results, seoData })
             );
           }}>
             <Download className="h-4 w-4 mr-1" /> Export PDF
@@ -174,7 +180,7 @@ export default function PerformancePage() {
                 Performance Score
               </div>
               <Suspense fallback={<div className="h-35 w-35 animate-pulse rounded-full bg-slate-800/40" />}>
-                <WebGuardScoreRing score={avgScore} size={140} />
+                <ScoreRing score={avgScore} size={140} />
               </Suspense>
               <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
                 <Clock className="h-3.5 w-3.5" />

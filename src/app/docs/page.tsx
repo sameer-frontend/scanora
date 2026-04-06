@@ -261,7 +261,7 @@ export default function DocsPage() {
             <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/25">
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-white">WebGuard</span>
+            <span className="text-lg font-bold text-white">Scanora</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
@@ -315,7 +315,7 @@ export default function DocsPage() {
             custom={2}
             className="text-4xl font-bold md:text-5xl"
           >
-            How WebGuard audits your website
+            How Scanora audits your website
           </motion.h1>
 
           <motion.p
@@ -363,7 +363,7 @@ export default function DocsPage() {
             Tools &amp; Technologies
           </motion.h2>
           <motion.p variants={fadeUp} custom={1} className="text-slate-400 mb-10 ml-11">
-            The engines that power every WebGuard scan
+            The engines that power every Scanora scan
           </motion.p>
 
           <div className="space-y-6">
@@ -543,15 +543,17 @@ export default function DocsPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500">
                 <Shield className="h-4 w-4 text-white" />
               </div>
-              <span className="font-semibold text-white">WebGuard</span>
+              <span className="font-semibold text-white">Scanora</span>
             </div>
             <div className="flex items-center gap-8 text-sm text-slate-400">
               <Link href="/#features" className="hover:text-white transition-colors">Features</Link>
               <Link href="/docs" className="hover:text-white transition-colors">Docs</Link>
               <Link href="/#how-it-works" className="hover:text-white transition-colors">How It Works</Link>
+              <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
             </div>
             <p className="text-sm text-slate-500">
-              © {new Date().getFullYear()} WebGuard. Free &amp; open source.
+              © {new Date().getFullYear()} Scanora. Free &amp; open source.
             </p>
           </div>
         </div>

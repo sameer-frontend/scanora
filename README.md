@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scanora
+
+Free, open-source website audit tool. Scan any URL for **WCAG 2.2 accessibility** issues, measure **Core Web Vitals** performance, and analyze **SEO** — all from one dashboard. Powered by Playwright, axe-core & Lighthouse scoring.
+
+## Features
+
+- **Accessibility Auditor** — WCAG 2.2 AA scanning via axe-core with 4 severity levels (critical → minor), code-level fix suggestions, and WCAG principle breakdown
+- **Performance Optimizer** — Core Web Vitals (LCP, FCP, TBT, CLS, TTFB) using Lighthouse v10 scoring, asset breakdown by category, and optimization opportunities
+- **SEO Auditor** — Meta tags, heading hierarchy, Open Graph & Twitter Card validation, JSON-LD structured data detection, link & image analysis
+- **Multi-Device Testing** — Every audit runs across 4 viewports: Mobile (375×812), Tablet (768×1024), Laptop (1366×768), Desktop (1920×1080)
+- **Screenshots** — Full-page screenshots captured per device during each scan
+- **PDF Export** — Client-side report generation scoped per audit category
+- **100% Free** — No accounts, no paywalls, no tracking cookies
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| UI | React 19, Tailwind CSS 4, Radix UI, Framer Motion |
+| Charts | Recharts |
+| Icons | Lucide React |
+| Browser Automation | Playwright Core + @sparticuz/chromium-min (serverless) |
+| Accessibility Engine | @axe-core/playwright |
+| PDF Generation | jsPDF + jspdf-autotable |
+| Deployment | Vercel (serverless functions, 2048 MB, 300s timeout) |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm, yarn, pnpm, or bun
+
+### Installation
+
+```bash
+git clone <repo-url>
+cd scanora
+npm install
+```
+
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_SITE_URL` | Site base URL | `https://scanora.dev` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/
+│   ├── layout.tsx                  # Root layout, metadata, fonts
+│   ├── page.tsx                    # Landing page with JSON-LD
+│   ├── opengraph-image.tsx         # Dynamic OG image generation
+│   ├── icon.tsx                    # Dynamic favicon generation
+│   ├── apple-icon.tsx              # Apple touch icon
+│   ├── sitemap.ts                  # Dynamic sitemap
+│   ├── robots.ts                   # Robots.txt
+│   ├── manifest.ts                 # PWA manifest
+│   ├── (dashboard)/
+│   │   ├── layout.tsx              # Dashboard shell with sidebar
+│   │   └── dashboard/
+│   │       ├── accessibility/      # Accessibility audit page
+│   │       ├── performance/        # Performance audit page
+│   │       ├── seo/                # SEO audit page
+│   │       ├── reports/            # Reports page
+│   │       └── settings/           # Settings page
+│   ├── api/analyze/
+│   │   ├── accessibility/route.ts  # axe-core WCAG scanning
+│   │   ├── performance/route.ts    # Core Web Vitals measurement
+│   │   └── seo/route.ts           # SEO data extraction
+│   ├── docs/                       # Documentation
+│   ├── privacy-policy/             # Privacy Policy
+│   └── terms/                      # Terms & Conditions
+├── components/
+│   ├── landing-page.tsx            # Landing page UI
+│   ├── back-button.tsx             # Client-side back navigation
+│   ├── dashboard/                  # Dashboard components
+│   │   ├── sidebar.tsx
+│   │   ├── scan-form.tsx
+│   │   ├── scan-states.tsx
+│   │   ├── score-ring.tsx
+│   │   ├── device-tabs.tsx
+│   │   ├── screenshot-card.tsx
+│   │   ├── cross-device-comparison.tsx
+│   │   └── mini-chart.tsx
+│   └── ui/                         # Radix-based primitives
+├── lib/
+│   ├── types.ts                    # TypeScript interfaces
+│   ├── scan-context.tsx            # Scan state management
+│   ├── browser-helpers.ts          # Playwright stealth helpers
+│   ├── export-pdf.ts              # PDF report generation
+│   ├── constants.ts                # Animation variants & styles
+│   └── utils.ts                    # Utilities
+```
 
-## Deploy on Vercel
+## API Routes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+All routes accept `POST` with `{ url: string }` and scan across 4 device viewports.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Endpoint | Description |
+|----------|-------------|
+| `/api/analyze/accessibility` | Runs axe-core WCAG 2.2 AA audit, returns violations by severity with fix suggestions |
+| `/api/analyze/performance` | Measures Core Web Vitals with Lighthouse v10 scoring, asset breakdown, opportunities |
+| `/api/analyze/seo` | Extracts meta tags, headings, OG/Twitter cards, structured data, link & image analysis |
+
+## Deploy
+
+Deploy to Vercel with zero configuration:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-repo/scanora)
+
+The `vercel.json` configures serverless functions with 2048 MB memory and 300s max duration for browser automation.
+
+## License
+
+Free & open source.

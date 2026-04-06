@@ -61,13 +61,17 @@ function ensureSpace(doc: jsPDF, y: number, needed: number): number {
   return y;
 }
 
+export type ReportScope = "accessibility" | "performance" | "seo";
+
 export function exportPdfReport({
   url,
+  scope,
   accessibilityData,
   performanceData,
   seoData,
 }: {
   url: string;
+  scope: ReportScope;
   accessibilityData: DeviceAccessibilityResult[] | null;
   performanceData: DevicePerformanceResult[] | null;
   seoData: DeviceSeoResult[] | null;
@@ -75,56 +79,29 @@ export function exportPdfReport({
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
 
+  const scopeLabels: Record<ReportScope, string> = {
+    accessibility: "Accessibility",
+    performance: "Performance",
+    seo: "SEO",
+  };
+
   // ── Cover / Title ──────────────────────────────────────────
   doc.setFillColor(15, 23, 42);
   doc.rect(0, 0, pageWidth, 60, "F");
   doc.setFontSize(22);
   doc.setTextColor(...COLORS.white);
   doc.setFont("helvetica", "bold");
-  doc.text("WebGuard Audit Report", 14, 28);
+  doc.text(`Scanora ${scopeLabels[scope]} Report`, 14, 28);
   doc.setFontSize(10);
   doc.setTextColor(148, 163, 184);
   doc.setFont("helvetica", "normal");
   doc.text(url, 14, 38);
   doc.text(`Generated: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, 14, 46);
 
-  // ── Score Summary ──────────────────────────────────────────
   let y = 70;
-  const scores: { label: string; score: number | null; color: [number, number, number] }[] = [
-    { label: "Accessibility", score: accessibilityData?.[0]?.data.score ?? null, color: COLORS.primary },
-    { label: "Performance", score: performanceData?.[0]?.data.score ?? null, color: COLORS.cyan },
-    { label: "SEO", score: seoData?.[0]?.data.score ?? null, color: COLORS.orange },
-  ];
-
-  doc.setFontSize(12);
-  doc.setTextColor(...COLORS.dark);
-  doc.setFont("helvetica", "bold");
-  doc.text("Score Overview", 14, y);
-  y += 10;
-
-  const boxWidth = (pageWidth - 28 - 16) / 3;
-  scores.forEach((s, i) => {
-    const x = 14 + i * (boxWidth + 8);
-    doc.setFillColor(248, 250, 252);
-    doc.roundedRect(x, y, boxWidth, 30, 3, 3, "F");
-    doc.setFontSize(9);
-    doc.setTextColor(...COLORS.muted);
-    doc.setFont("helvetica", "normal");
-    doc.text(s.label, x + boxWidth / 2, y + 10, { align: "center" });
-    doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    if (s.score !== null) {
-      doc.setTextColor(...scoreColor(s.score));
-      doc.text(`${s.score}`, x + boxWidth / 2, y + 24, { align: "center" });
-    } else {
-      doc.setTextColor(...COLORS.muted);
-      doc.text("—", x + boxWidth / 2, y + 24, { align: "center" });
-    }
-  });
-  y += 42;
 
   // ── Accessibility Section ──────────────────────────────────
-  if (accessibilityData && accessibilityData.length > 0) {
+  if (scope === "accessibility" && accessibilityData && accessibilityData.length > 0) {
     y = ensureSpace(doc, y, 40);
     y = addPageHeader(doc, y, "Accessibility Audit", COLORS.primary);
 
@@ -176,7 +153,7 @@ export function exportPdfReport({
   }
 
   // ── Performance Section ────────────────────────────────────
-  if (performanceData && performanceData.length > 0) {
+  if (scope === "performance" && performanceData && performanceData.length > 0) {
     y = ensureSpace(doc, y, 50);
     y = addPageHeader(doc, y, "Performance Audit", COLORS.cyan);
 
@@ -245,7 +222,7 @@ export function exportPdfReport({
   }
 
   // ── SEO Section ────────────────────────────────────────────
-  if (seoData && seoData.length > 0) {
+  if (scope === "seo" && seoData && seoData.length > 0) {
     y = ensureSpace(doc, y, 50);
     y = addPageHeader(doc, y, "SEO Audit", COLORS.orange);
 
@@ -303,12 +280,12 @@ export function exportPdfReport({
     doc.setFontSize(7);
     doc.setTextColor(...COLORS.muted);
     doc.setFont("helvetica", "normal");
-    doc.text(`WebGuard Report · ${url} · Page ${i}/${totalPages}`, pageWidth / 2, 290, { align: "center" });
+    doc.text(`Scanora Report · ${url} · Page ${i}/${totalPages}`, pageWidth / 2, 290, { align: "center" });
   }
 
   // ── Download ───────────────────────────────────────────────
   const hostname = (() => {
     try { return new URL(url).hostname; } catch { return "site"; }
   })();
-  doc.save(`webguard-report-${hostname}-${Date.now()}.pdf`);
+  doc.save(`Scanora-report-${hostname}-${Date.now()}.pdf`);
 }

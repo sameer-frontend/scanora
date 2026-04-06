@@ -10,9 +10,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Bell,
   Search,
-  LogOut,
   Globe,
 } from "lucide-react";
 import { useState } from "react";
@@ -67,7 +65,7 @@ export default function DashboardSidebar() {
               exit={{ opacity: 0, x: -10 }}
               className="text-lg font-bold text-white whitespace-nowrap"
             >
-              WebGuard
+              Scanora
             </motion.span>
           )}
         </AnimatePresence>
@@ -155,30 +153,4 @@ export default function DashboardSidebar() {
   );
 }
 
-export function DashboardHeader() {
-  return (
-    <header className="flex h-16 items-center justify-between border-b border-slate-800/50 bg-[#0a0e1a]/80 backdrop-blur-xl px-6">
-      <div className="flex items-center gap-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search..."
-            className="h-9 w-64 rounded-lg border border-slate-800 bg-slate-900/50 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none transition-colors"
-          />
-        </div>
-      </div>
-      <div className="flex items-center gap-3">
-        <button className="relative rounded-lg p-2 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-emerald-500" />
-        </button>
-        <Link href="/">
-          <button className="rounded-lg p-2 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors">
-            <LogOut className="h-5 w-5" />
-          </button>
-        </Link>
-      </div>
-    </header>
-  );
-}
+

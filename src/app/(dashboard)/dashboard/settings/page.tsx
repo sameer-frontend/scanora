@@ -61,7 +61,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("webguard-scan-history");
+      const raw = localStorage.getItem("Scanora-scan-history");
       if (raw) setHistory(JSON.parse(raw));
     } catch {
       /* empty */
@@ -69,14 +69,14 @@ export default function SettingsPage() {
   }, []);
 
   const clearHistory = () => {
-    localStorage.removeItem("webguard-scan-history");
+    localStorage.removeItem("Scanora-scan-history");
     setHistory([]);
     setExpandedIndex(null);
   };
 
   const removeEntry = (index: number) => {
     const updated = history.filter((_, i) => i !== index);
-    localStorage.setItem("webguard-scan-history", JSON.stringify(updated));
+    localStorage.setItem("Scanora-scan-history", JSON.stringify(updated));
     setHistory(updated);
     if (expandedIndex === index) setExpandedIndex(null);
   };

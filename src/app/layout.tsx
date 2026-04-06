@@ -12,20 +12,71 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://scanora.dev";
+
 export const metadata: Metadata = {
-  title: "WebGuard AI — Accessibility. Performance. Privacy.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Scanora — Website Accessibility, Performance & SEO Audit Tool",
+    template: "%s | Scanora",
+  },
   description:
-    "The all-in-one AI-powered website intelligence platform. Scan for accessibility issues, optimize performance, and track analytics — all privacy-first.",
+    "Free online website audit tool. Scan for WCAG 2.2 accessibility issues, measure Core Web Vitals performance, and analyze SEO — all from one dashboard. Powered by Playwright, axe-core & Lighthouse.",
   keywords: [
-    "accessibility",
-    "performance",
-    "privacy",
-    "WCAG",
+    "website audit tool",
+    "accessibility checker",
+    "WCAG 2.2 audit",
+    "performance testing",
     "Core Web Vitals",
-    "GDPR",
-    "website audit",
-    "AI",
+    "SEO analyzer",
+    "axe-core scanner",
+    "Lighthouse audit",
+    "web accessibility",
+    "site speed test",
+    "multi-device testing",
+    "free website checker",
   ],
+  authors: [{ name: "Scanora" }],
+  creator: "Scanora",
+  publisher: "Scanora",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteUrl,
+    siteName: "Scanora",
+    title: "Scanora — Website Accessibility, Performance & SEO Audit Tool",
+    description:
+      "Free online website audit tool. Scan for WCAG 2.2 accessibility issues, measure Core Web Vitals, and analyze SEO — all from one dashboard.",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Scanora — Website Accessibility, Performance & SEO Audit Tool",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Scanora — Website Accessibility, Performance & SEO Audit Tool",
+    description:
+      "Free online website audit tool. Scan for WCAG 2.2 accessibility issues, measure Core Web Vitals, and analyze SEO.",
+  },
+  alternates: {
+    canonical: siteUrl,
+  },
+
 };
 
 export default function RootLayout({

@@ -2,19 +2,19 @@
 
 import { useId } from "react";
 
-interface WebGuardScoreRingProps {
+interface ScoreRingProps {
   score: number;
   size?: number;
   strokeWidth?: number;
   showScoreText?: boolean;
 }
 
-export function WebGuardScoreRing({
+export function ScoreRing({
   score,
   size = 140,
   strokeWidth = 10,
   showScoreText = true,
-}: WebGuardScoreRingProps) {
+}: ScoreRingProps) {
   const id = useId();
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;

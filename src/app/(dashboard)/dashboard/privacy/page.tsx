@@ -119,7 +119,7 @@ export default function PrivacyPage() {
               </div>
               <div className="flex items-center gap-2">
                 <code className="rounded-md bg-slate-900 border border-slate-800 px-3 py-1.5 font-mono text-xs text-slate-300">
-                  &lt;script src=&quot;https://cdn.webguard.ai/t.js&quot; data-site=&quot;abc123&quot;&gt;&lt;/script&gt;
+                  &lt;script src=&quot;https://cdn.scanora.dev/t.js&quot; data-site=&quot;abc123&quot;&gt;&lt;/script&gt;
                 </code>
                 <Button variant="ghost" size="sm">
                   <Copy className="h-4 w-4" />

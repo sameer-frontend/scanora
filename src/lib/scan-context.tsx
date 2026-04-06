@@ -74,7 +74,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
         const strip = <T extends { screenshot?: string }>(arr: T[]) =>
           arr.map(({ screenshot: _s, ...rest }) => ({ ...rest, screenshot: "" }));
         const prev: Record<string, unknown>[] = JSON.parse(
-          localStorage.getItem("webguard-scan-history") || "[]",
+          localStorage.getItem("Scanora-scan-history") || "[]",
         );
         // Merge into existing entry for same URL or create new
         const existing = prev.find(
@@ -84,7 +84,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
           existing[category] = strip(data as { screenshot?: string }[]);
           existing.timestamp = Date.now();
           localStorage.setItem(
-            "webguard-scan-history",
+            "Scanora-scan-history",
             JSON.stringify(prev.slice(0, 5)),
           );
         } else {
@@ -97,7 +97,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
             [category]: strip(data as { screenshot?: string }[]),
           };
           localStorage.setItem(
-            "webguard-scan-history",
+            "Scanora-scan-history",
             JSON.stringify([entry, ...prev].slice(0, 5)),
           );
         }

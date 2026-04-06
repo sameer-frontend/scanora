@@ -26,7 +26,7 @@ import { useScan } from "@/lib/scan-context";
 import type { DeviceType, DeviceAccessibilityResult, AccessibilityIssue, WcagPrinciple } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const WebGuardScoreRing = lazy(() => import("@/components/dashboard/score-ring").then(m => ({ default: m.WebGuardScoreRing })));
+const ScoreRing = lazy(() => import("@/components/dashboard/score-ring").then(m => ({ default: m.ScoreRing })));
 const DeviceTabs = lazy(() => import("@/components/dashboard/device-tabs").then(m => ({ default: m.DeviceTabs })));
 const ScreenshotCard = lazy(() => import("@/components/dashboard/screenshot-card").then(m => ({ default: m.ScreenshotCard })));
 const CrossDeviceComparison = lazy(() => import("@/components/dashboard/cross-device-comparison").then(m => ({ default: m.CrossDeviceComparison })));
@@ -95,7 +95,13 @@ export default function AccessibilityPage() {
 
   // Error
   if (error) {
-    return <ScanErrorState error={error} />;
+    return (
+      <ScanErrorState
+        error={error}
+        onRetry={() => scannedUrl && scanAccessibility(scannedUrl)}
+        onNewUrl={scanAccessibility}
+      />
+    );
   }
 
   if (!results || !activeResult) return null;
@@ -203,7 +209,7 @@ export default function AccessibilityPage() {
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={() => {
             import("@/lib/export-pdf").then(({ exportPdfReport }) =>
-              exportPdfReport({ url: scannedUrl, accessibilityData: results, performanceData, seoData })
+              exportPdfReport({ url: scannedUrl, scope: "accessibility", accessibilityData: results, performanceData, seoData })
             );
           }}>
             <Download className="h-4 w-4 mr-1" /> Export PDF
@@ -244,7 +250,7 @@ export default function AccessibilityPage() {
                 A11y Score
               </div>
               <Suspense fallback={<div className="h-35 w-35 animate-pulse rounded-full bg-slate-800/40" />}>
-                <WebGuardScoreRing score={avgScore} size={140} />
+                <ScoreRing score={avgScore} size={140} />
               </Suspense>
               <Badge variant="success" className="mt-4">WCAG 2.2 AA</Badge>
             </CardContent>
