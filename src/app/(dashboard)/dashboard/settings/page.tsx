@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings,
@@ -56,17 +56,16 @@ interface HistoryEntry {
 }
 
 export default function SettingsPage() {
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
-
-  useEffect(() => {
+  const [history, setHistory] = useState<HistoryEntry[]>(() => {
+    if (typeof window === "undefined") return [];
     try {
       const raw = localStorage.getItem("Scanora-scan-history");
-      if (raw) setHistory(JSON.parse(raw));
+      return raw ? JSON.parse(raw) : [];
     } catch {
-      /* empty */
+      return [];
     }
-  }, []);
+  });
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const clearHistory = () => {
     localStorage.removeItem("Scanora-scan-history");

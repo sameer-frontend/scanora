@@ -55,10 +55,8 @@ type FilterTab = "all" | "critical" | "warning" | "info" | "pass";
 /* Per-page SEO detail sections */
 function PageSeoSections({
   pageData,
-  prefix,
 }: {
   pageData: SeoData;
-  prefix: string;
 }) {
   const [auditTab, setAuditTab] = useState<FilterTab>("all");
 
@@ -695,7 +693,6 @@ export default function SeoPage() {
       <div>
         <PageSeoSections
           pageData={data}
-          prefix=""
         />
       </div>
 

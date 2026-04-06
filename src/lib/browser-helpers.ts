@@ -3,7 +3,7 @@
  * Used by all API scan routes to handle Cloudflare, Google reCAPTCHA, and similar bot protections.
  */
 
-import type { Page, BrowserContext, Browser } from "playwright-core";
+import type { Page, Browser } from "playwright-core";
 import { chromium } from "playwright-core";
 
 /**

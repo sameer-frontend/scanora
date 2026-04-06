@@ -58,7 +58,7 @@ interface ScanErrorStateProps {
   accentColor?: AccentColor;
 }
 
-export function ScanErrorState({ error, onRetry, onNewUrl, accentColor = "red" as AccentColor }: ScanErrorStateProps) {
+export function ScanErrorState({ error, onRetry, onNewUrl }: ScanErrorStateProps) {
   const [showInput, setShowInput] = useState(false);
   const [url, setUrl] = useState("");
 

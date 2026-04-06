@@ -17,14 +17,12 @@ import {
   FileText,
   Shield,
   CheckCircle2,
-  ExternalLink,
   Copy,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MiniChart } from "@/components/dashboard/mini-chart";
 
 const fadeUp = {

@@ -72,7 +72,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
     ) => {
       try {
         const strip = <T extends { screenshot?: string }>(arr: T[]) =>
-          arr.map(({ screenshot: _s, ...rest }) => ({ ...rest, screenshot: "" }));
+          arr.map((item) => ({ ...item, screenshot: "" }));
         const prev: Record<string, unknown>[] = JSON.parse(
           localStorage.getItem("Scanora-scan-history") || "[]",
         );

@@ -24,7 +24,6 @@ import { ScanLoadingState, ScanErrorState } from "@/components/dashboard/scan-st
 import { ScanForm } from "@/components/dashboard/scan-form";
 import { useScan } from "@/lib/scan-context";
 import type { DeviceType, DeviceAccessibilityResult, AccessibilityIssue, WcagPrinciple } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 const ScoreRing = lazy(() => import("@/components/dashboard/score-ring").then(m => ({ default: m.ScoreRing })));
 const DeviceTabs = lazy(() => import("@/components/dashboard/device-tabs").then(m => ({ default: m.DeviceTabs })));
