@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { join } from "path";
 import { createHash } from "crypto";
 
-export const maxDuration = 600;
+export const maxDuration = 300;
 import type {
   AccessibilityData,
   AccessibilityIssue,

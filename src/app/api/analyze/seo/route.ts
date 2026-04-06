@@ -19,7 +19,7 @@ import {
   getStealthContextOptions,
 } from "@/lib/browser-helpers";
 
-export const maxDuration = 600;
+export const maxDuration = 300;
 // ── Page-level SEO extraction (runs inside browser) ───────────
 
 /** Strip trailing slash + fragment so /foo/ and /foo are treated as the same page */

@@ -7,7 +7,7 @@ import type {
   AssetFile,
 } from "@/lib/types";
 
-export const maxDuration = 600;
+export const maxDuration = 300;
 import { DEVICE_PROFILES } from "@/lib/types";
 import { fetchSitemapUrls } from "@/lib/sitemap";
 import {
