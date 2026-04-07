@@ -5,6 +5,7 @@ import {
   applyStealthScripts,
   stealthGoto,
   getStealthContextOptions,
+  sanitizeBrowserError,
 } from "@/lib/browser-helpers";
 import { DEVICE_PROFILES } from "@/lib/types";
 
@@ -418,7 +419,6 @@ export async function POST(req: NextRequest) {
     if (browser) {
       try { await browser.close(); } catch { /* ignore */ }
     }
-    const message = err instanceof Error ? err.message : "Bundle analysis failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeBrowserError(err) }, { status: 500 });
   }
 }

@@ -6,6 +6,7 @@ import {
   applyStealthScripts,
   stealthGoto,
   getStealthContextOptions,
+  sanitizeBrowserError,
 } from "@/lib/browser-helpers";
 
 export const maxDuration = 300;
@@ -445,7 +446,6 @@ export async function POST(req: NextRequest) {
     if (browser) {
       try { await browser.close(); } catch { /* ignore */ }
     }
-    const message = err instanceof Error ? err.message : "Analysis failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeBrowserError(err) }, { status: 500 });
   }
 }

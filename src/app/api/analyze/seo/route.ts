@@ -20,6 +20,7 @@ import {
   applyStealthScripts,
   stealthGoto,
   getStealthContextOptions,
+  sanitizeBrowserError,
 } from "@/lib/browser-helpers";
 
 export const maxDuration = 300;
@@ -506,28 +507,29 @@ async function scanDevice(
   targetUrl: string
 ): Promise<DeviceSeoResult> {
   const context = await browser.newContext(getStealthContextOptions(device));
-  const page = await context.newPage();
-  await applyStealthScripts(page);
+  try {
+    const page = await context.newPage();
+    await applyStealthScripts(page);
 
-  const nav = await stealthGoto(page, targetUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
-  if (!nav.success) {
+    const nav = await stealthGoto(page, targetUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
+    if (!nav.success) {
+      throw new Error(
+        `Blocked by ${nav.challengeDetected} on ${targetUrl}. The site requires interactive CAPTCHA.`
+      );
+    }
+
+    // Brief wait for images to load for alt-text analysis
+    await page.waitForTimeout(500);
+
+    const raw: RawSeoData = await page.evaluate(extractSeoData, targetUrl);
+
+    const screenshotBuf = await page.screenshot({ fullPage: true, type: "jpeg", quality: 70 });
+    const screenshot = `data:image/jpeg;base64,${screenshotBuf.toString("base64")}`;
+
+    return { device, screenshot, data: analyzeSeo(raw, targetUrl) };
+  } finally {
     await context.close();
-    throw new Error(
-      `Blocked by ${nav.challengeDetected} on ${targetUrl}. The site requires interactive CAPTCHA.`
-    );
   }
-
-  // Brief wait for images to load for alt-text analysis
-  await page.waitForTimeout(500);
-
-  const raw: RawSeoData = await page.evaluate(extractSeoData, targetUrl);
-
-  const screenshotBuf = await page.screenshot({ fullPage: true, type: "jpeg", quality: 70 });
-  const screenshot = `data:image/jpeg;base64,${screenshotBuf.toString("base64")}`;
-
-  await context.close();
-
-  return { device, screenshot, data: analyzeSeo(raw, targetUrl) };
 }
 
 // ── Deep Audit: content analysis (runs inside browser) ────────
@@ -709,26 +711,28 @@ async function scanDeviceDeepAudit(
 ): Promise<SeoDeepAudit> {
   const desktopDevice = DEVICE_PROFILES.find((d) => d.type === "desktop")!;
   const context = await browser.newContext(getStealthContextOptions(desktopDevice));
-  const page = await context.newPage();
-  await applyStealthScripts(page);
+  try {
+    const page = await context.newPage();
+    await applyStealthScripts(page);
 
-  const nav = await stealthGoto(page, targetUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
-  if (!nav.success) {
+    const nav = await stealthGoto(page, targetUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
+    if (!nav.success) {
+      return {
+        structuredDataValidation: [],
+        internalLinks: [],
+        keywords: [],
+        brokenLinks: [],
+        contentStats: { wordCount: 0, readingTime: 0, paragraphCount: 0, avgSentenceLength: 0 },
+      };
+    }
+
+    await page.waitForTimeout(500);
+    const rawDeep: RawDeepAuditData = await page.evaluate(extractDeepAuditData, targetUrl);
+
+    return analyzeDeepAudit(rawDeep, targetUrl);
+  } finally {
     await context.close();
-    return {
-      structuredDataValidation: [],
-      internalLinks: [],
-      keywords: [],
-      brokenLinks: [],
-      contentStats: { wordCount: 0, readingTime: 0, paragraphCount: 0, avgSentenceLength: 0 },
-    };
   }
-
-  await page.waitForTimeout(500);
-  const rawDeep: RawDeepAuditData = await page.evaluate(extractDeepAuditData, targetUrl);
-  await context.close();
-
-  return analyzeDeepAudit(rawDeep, targetUrl);
 }
 
 
@@ -784,13 +788,6 @@ export async function POST(req: NextRequest) {
     if (browser) {
       try { await browser.close(); } catch { /* ignore */ }
     }
-    const message = err instanceof Error ? err.message : "Scan failed";
-    if (message.includes("browserType.launch")) {
-      return NextResponse.json(
-        { error: "Chromium not installed. Run: npx playwright install chromium" },
-        { status: 500 }
-      );
-    }
-    return NextResponse.json({ error: `Scan failed: ${message}` }, { status: 500 });
+    return NextResponse.json({ error: sanitizeBrowserError(err) }, { status: 500 });
   }
 }

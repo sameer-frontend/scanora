@@ -11,6 +11,18 @@
     "src/app/api/analyze/seo/route.ts": {
       "memory": 2048,
       "maxDuration": 300
+    },
+    "src/app/api/analyze/bundle/route.ts": {
+      "memory": 2048,
+      "maxDuration": 300
+    },
+    "src/app/api/analyze/nextjs/route.ts": {
+      "memory": 2048,
+      "maxDuration": 300
+    },
+    "src/app/api/analyze/ab-compare/route.ts": {
+      "memory": 2048,
+      "maxDuration": 300
     }
   }
 }

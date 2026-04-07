@@ -18,6 +18,7 @@ import {
   applyStealthScripts,
   stealthGoto,
   getStealthContextOptions,
+  sanitizeBrowserError,
 } from "@/lib/browser-helpers";
 
 interface ResourceEntry {
@@ -721,14 +722,7 @@ export async function POST(req: NextRequest) {
     if (browser) {
       try { await browser.close(); } catch { /* ignore */ }
     }
-    const message = err instanceof Error ? err.message : "Scan failed";
-    if (message.includes("browserType.launch")) {
-      return NextResponse.json(
-        { error: "Chromium not installed. Run: npx playwright install chromium" },
-        { status: 500 }
-      );
-    }
-    return NextResponse.json({ error: `Scan failed: ${message}` }, { status: 500 });
+    return NextResponse.json({ error: sanitizeBrowserError(err) }, { status: 500 });
   }
 }
 

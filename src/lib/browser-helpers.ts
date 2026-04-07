@@ -217,3 +217,37 @@ export function getStealthContextOptions(device: {
     javaScriptEnabled: true,
   };
 }
+
+/**
+ * Sanitize browser/Playwright error messages for user-facing responses.
+ * Strips Chromium command lines, internal paths, and other noisy details.
+ */
+export function sanitizeBrowserError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+
+  if (raw.includes("browserType.launch")) {
+    return "Browser failed to start. Please try again in a moment.";
+  }
+  if (raw.includes("Target page, context or browser has been closed")) {
+    return "Browser closed unexpectedly. Please try again.";
+  }
+  if (raw.includes("Timeout") || raw.includes("timeout")) {
+    return "The page took too long to load. Please try again or check the URL.";
+  }
+  if (raw.includes("net::ERR_NAME_NOT_RESOLVED")) {
+    return "Could not resolve the domain name. Please check the URL.";
+  }
+  if (raw.includes("net::ERR_CONNECTION_REFUSED")) {
+    return "Connection refused by the server. Please check the URL.";
+  }
+  if (raw.includes("net::")) {
+    return "Network error while loading the page. Please check the URL and try again.";
+  }
+
+  // Strip Chromium command-line args that may leak in some errors
+  const cleaned = raw.replace(/\/tmp\/chromium\s+--[\s\S]*$/, "").trim();
+  // Strip Playwright call logs
+  const withoutCallLog = cleaned.split("Call log:")[0].trim();
+
+  return withoutCallLog || "An unexpected error occurred. Please try again.";
+}
