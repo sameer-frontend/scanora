@@ -20,7 +20,7 @@ export function DeviceTabs({
 }: DeviceTabsProps) {
   const styles = accentStyles[accentColor];
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {results.map((r) => {
         const DevIcon = deviceIconMap[r.device.type];
         const isActive = r.device.type === currentDevice;
@@ -29,7 +29,7 @@ export function DeviceTabs({
             key={r.device.type}
             onClick={() => onDeviceChange(r.device.type)}
             className={cn(
-              "flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all border",
+              "flex items-center gap-1.5 sm:gap-2 rounded-lg px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all border",
               isActive
                 ? `${styles.activeBg} ${styles.activeBorder} ${styles.text}`
                 : "bg-slate-900/50 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/50"
@@ -37,7 +37,7 @@ export function DeviceTabs({
           >
             <DevIcon className="h-4 w-4" />
             <span>{r.device.name}</span>
-            <span className="text-xs opacity-60">{r.device.width}×{r.device.height}</span>
+            <span className="hidden sm:inline text-xs opacity-60">{r.device.width}×{r.device.height}</span>
             <span
               className={cn(
                 "ml-1 text-xs font-bold",

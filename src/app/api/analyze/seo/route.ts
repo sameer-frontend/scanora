@@ -8,6 +8,10 @@ import type {
   SeoIssue,
   DeviceSeoResult,
   DeviceProfile,
+  SeoDeepAudit,
+  StructuredDataValidation,
+  InternalLink,
+  KeywordAnalysis,
 } from "@/lib/types";
 
 import { DEVICE_PROFILES } from "@/lib/types";
@@ -526,6 +530,207 @@ async function scanDevice(
   return { device, screenshot, data: analyzeSeo(raw, targetUrl) };
 }
 
+// ── Deep Audit: content analysis (runs inside browser) ────────
+
+interface RawDeepAuditData {
+  bodyText: string;
+  internalLinks: { href: string; text: string }[];
+  jsonLdBlocks: string[];
+  title: string;
+  h1Text: string;
+  metaDescription: string;
+}
+
+function extractDeepAuditData(pageUrl: string): RawDeepAuditData {
+  const origin = new URL(pageUrl).origin;
+
+  const bodyText = (document.body?.innerText || "").trim();
+  const title = document.title || "";
+  const h1 = document.querySelector("h1");
+  const h1Text = h1?.textContent?.trim() || "";
+  const descTag = document.querySelector('meta[name="description"]');
+  const metaDescription = descTag?.getAttribute("content") || "";
+
+  const internalLinks: { href: string; text: string }[] = [];
+  document.querySelectorAll("a[href]").forEach((a) => {
+    const href = a.getAttribute("href") || "";
+    try {
+      const url = new URL(href, pageUrl);
+      if (url.origin === origin) {
+        internalLinks.push({ href: url.pathname, text: (a.textContent || "").trim().slice(0, 100) });
+      }
+    } catch {
+      // relative link
+      internalLinks.push({ href, text: (a.textContent || "").trim().slice(0, 100) });
+    }
+  });
+
+  const jsonLdBlocks: string[] = [];
+  document.querySelectorAll('script[type="application/ld+json"]').forEach((s) => {
+    jsonLdBlocks.push(s.textContent || "");
+  });
+
+  return { bodyText, internalLinks, jsonLdBlocks, title, h1Text, metaDescription };
+}
+
+function analyzeDeepAudit(raw: RawDeepAuditData, pageUrl: string): SeoDeepAudit {
+  // ── Structured Data Validation ──────────────────────────────
+  const structuredDataValidation: StructuredDataValidation[] = [];
+  for (const block of raw.jsonLdBlocks) {
+    try {
+      const data = JSON.parse(block);
+      const items = Array.isArray(data["@graph"]) ? data["@graph"] : [data];
+      for (const item of items) {
+        const type = item["@type"] || "Unknown";
+        const errors: string[] = [];
+        const warnings: string[] = [];
+
+        // Basic field checks for common types
+        if (type === "Organization" || type === "LocalBusiness") {
+          if (!item.name) errors.push("Missing required 'name' field");
+          if (!item.url) warnings.push("Missing 'url' field");
+          if (!item.logo) warnings.push("Missing 'logo' field");
+        }
+        if (type === "Article" || type === "BlogPosting" || type === "NewsArticle") {
+          if (!item.headline) errors.push("Missing required 'headline' field");
+          if (!item.author) warnings.push("Missing 'author' field");
+          if (!item.datePublished) warnings.push("Missing 'datePublished' field");
+          if (!item.image) warnings.push("Missing 'image' field");
+        }
+        if (type === "Product") {
+          if (!item.name) errors.push("Missing required 'name' field");
+          if (!item.offers) warnings.push("Missing 'offers' for rich results");
+        }
+        if (type === "WebSite") {
+          if (!item.url) warnings.push("Missing 'url' field");
+          if (!item.name) warnings.push("Missing 'name' field");
+        }
+        if (type === "BreadcrumbList") {
+          if (!item.itemListElement || !Array.isArray(item.itemListElement))
+            errors.push("Missing 'itemListElement' array");
+        }
+        if (type === "FAQPage") {
+          if (!item.mainEntity || !Array.isArray(item.mainEntity))
+            errors.push("Missing 'mainEntity' array for FAQ");
+        }
+
+        structuredDataValidation.push({
+          type,
+          isValid: errors.length === 0,
+          errors,
+          warnings,
+          fields: Object.fromEntries(
+            Object.entries(item).filter(([k]) => k !== "@context").slice(0, 20)
+          ),
+        });
+      }
+    } catch {
+      structuredDataValidation.push({
+        type: "Invalid JSON-LD",
+        isValid: false,
+        errors: ["Could not parse JSON-LD block"],
+        warnings: [],
+        fields: {},
+      });
+    }
+  }
+
+  // ── Internal Links ──────────────────────────────────────────
+  const uniqueLinks = new Map<string, InternalLink>();
+  for (const link of raw.internalLinks) {
+    if (!uniqueLinks.has(link.href)) {
+      uniqueLinks.set(link.href, { from: pageUrl, to: link.href, text: link.text });
+    }
+  }
+  const internalLinks = Array.from(uniqueLinks.values()).slice(0, 100);
+
+  // ── Keyword Analysis ────────────────────────────────────────
+  const text = raw.bodyText.toLowerCase();
+  const words = text.split(/\s+/).filter((w) => w.length > 3);
+  const totalWords = words.length;
+
+  const stopWords = new Set([
+    "the", "and", "for", "are", "but", "not", "you", "all", "can", "her", "was", "one", "our",
+    "out", "with", "this", "that", "from", "have", "they", "been", "said", "each", "which",
+    "their", "will", "other", "about", "more", "some", "than", "them", "into", "only", "over",
+    "such", "also", "most", "would", "make", "like", "just", "when", "your"
+  ]);
+
+  const wordFreq = new Map<string, number>();
+  for (const w of words) {
+    if (!stopWords.has(w) && w.length > 3) {
+      wordFreq.set(w, (wordFreq.get(w) || 0) + 1);
+    }
+  }
+
+  const titleLower = raw.title.toLowerCase();
+  const h1Lower = raw.h1Text.toLowerCase();
+  const descLower = raw.metaDescription.toLowerCase();
+  const urlLower = pageUrl.toLowerCase();
+
+  const keywords: KeywordAnalysis[] = Array.from(wordFreq.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+    .map(([keyword, count]) => ({
+      keyword,
+      count,
+      density: totalWords > 0 ? Math.round((count / totalWords) * 10000) / 100 : 0,
+      inTitle: titleLower.includes(keyword),
+      inH1: h1Lower.includes(keyword),
+      inMetaDescription: descLower.includes(keyword),
+      inUrl: urlLower.includes(keyword),
+    }));
+
+  // ── Content Stats ───────────────────────────────────────────
+  const sentences = raw.bodyText.split(/[.!?]+/).filter((s) => s.trim().length > 10);
+  const paragraphs = raw.bodyText.split(/\n\n+/).filter((p) => p.trim().length > 20);
+
+  const contentStats = {
+    wordCount: totalWords,
+    readingTime: Math.max(1, Math.round(totalWords / 200)),
+    paragraphCount: paragraphs.length,
+    avgSentenceLength: sentences.length > 0
+      ? Math.round(totalWords / sentences.length)
+      : 0,
+  };
+
+  return {
+    structuredDataValidation,
+    internalLinks,
+    keywords,
+    brokenLinks: [], // Broken link checking would require HTTP requests, done separately if needed
+    contentStats,
+  };
+}
+
+async function scanDeviceDeepAudit(
+  browser: Awaited<ReturnType<typeof launchBrowser>>,
+  targetUrl: string
+): Promise<SeoDeepAudit> {
+  const desktopDevice = DEVICE_PROFILES.find((d) => d.type === "desktop")!;
+  const context = await browser.newContext(getStealthContextOptions(desktopDevice));
+  const page = await context.newPage();
+  await applyStealthScripts(page);
+
+  const nav = await stealthGoto(page, targetUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
+  if (!nav.success) {
+    await context.close();
+    return {
+      structuredDataValidation: [],
+      internalLinks: [],
+      keywords: [],
+      brokenLinks: [],
+      contentStats: { wordCount: 0, readingTime: 0, paragraphCount: 0, avgSentenceLength: 0 },
+    };
+  }
+
+  await page.waitForTimeout(500);
+  const rawDeep: RawDeepAuditData = await page.evaluate(extractDeepAuditData, targetUrl);
+  await context.close();
+
+  return analyzeDeepAudit(rawDeep, targetUrl);
+}
+
 
 
 // ── POST handler ──────────────────────────────────────────────
@@ -538,7 +743,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { url, devices } = body as { url?: unknown; devices?: unknown };
+  const { url, deepAudit: wantDeepAudit } = body as { url?: unknown; deepAudit?: boolean };
 
   if (!url || typeof url !== "string") {
     return NextResponse.json({ error: "URL is required" }, { status: 400 });
@@ -551,14 +756,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
   }
 
-  const selectedDevices: DeviceProfile[] =
-    Array.isArray(devices) && devices.length > 0
-      ? DEVICE_PROFILES.filter((d) => (devices as string[]).includes(d.type))
-      : DEVICE_PROFILES;
-
-  if (selectedDevices.length === 0) {
-    return NextResponse.json({ error: "No valid devices specified" }, { status: 400 });
-  }
+  // SEO analysis always uses desktop viewport
+  const desktopDevice = DEVICE_PROFILES.find((d) => d.type === "desktop")!;
 
   let browser: Awaited<ReturnType<typeof launchBrowser>> | null = null;
   try {
@@ -566,15 +765,21 @@ export async function POST(req: NextRequest) {
     const targetUrl = parsedUrl.toString();
 
     const results = await Promise.all(
-      selectedDevices.map((device) => scanDevice(browser!, device, targetUrl))
+      [desktopDevice].map((device) => scanDevice(browser!, device, targetUrl))
     );
+
+    let deepAudit: SeoDeepAudit | undefined;
+    if (wantDeepAudit) {
+      deepAudit = await scanDeviceDeepAudit(browser, targetUrl);
+    }
 
     await browser.close();
     browser = null;
 
-    return NextResponse.json(results, {
-      headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
-    });
+    return NextResponse.json(
+      { results, deepAudit },
+      { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } },
+    );
   } catch (err) {
     if (browser) {
       try { await browser.close(); } catch { /* ignore */ }

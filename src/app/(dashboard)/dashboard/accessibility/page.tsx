@@ -14,6 +14,7 @@ import {
   MonitorSmartphone,
   Globe,
   ExternalLink,
+  RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -53,10 +54,11 @@ export default function AccessibilityPage() {
     accessibilityData: results,
     accessibilityLoading: loading,
     accessibilityError: error,
+    accessibilityScannedUrl: scannedUrl,
     scanAccessibility,
     performanceData,
     seoData,
-    scannedUrl,
+    clearAccessibility,
   } = useScan();
 
   const [activeDevice, setActiveDevice] = useState<DeviceType | null>(null);
@@ -77,6 +79,8 @@ export default function AccessibilityPage() {
         icon={Accessibility}
         title="Accessibility Audit"
         description="Enter a URL and select a device to run a WCAG 2.2 accessibility audit powered by Playwright and axe-core."
+        scannedUrl={scannedUrl}
+        showAdvancedOptions={false}
       />
     );
   }
@@ -87,7 +91,7 @@ export default function AccessibilityPage() {
       <ScanLoadingState
         accentColor="emerald"
         title="Scanning for Accessibility Issues…"
-        description="Playwright is loading the page on multiple devices and running axe-core WCAG audit."
+        description="Playwright is loading the page on your selected device and running axe-core WCAG audit."
       />
     );
   }
@@ -97,7 +101,7 @@ export default function AccessibilityPage() {
     return (
       <ScanErrorState
         error={error}
-        onRetry={() => scannedUrl && scanAccessibility(scannedUrl)}
+        onRetry={clearAccessibility}
         onNewUrl={scanAccessibility}
       />
     );
@@ -195,17 +199,20 @@ export default function AccessibilityPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
             <Accessibility className="h-5 w-5 text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Accessibility Auditor</h1>
-            <p className="text-slate-400 text-sm">WCAG 2.2 AA compliance · Multi-device · axe-core</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">Accessibility Auditor</h1>
+            <p className="text-slate-400 text-xs sm:text-sm">WCAG 2.2 AA compliance · Multi-device · axe-core</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={clearAccessibility}>
+            <RotateCcw className="h-4 w-4 mr-1" /> Try New Scan
+          </Button>
           <Button variant="outline" size="sm" onClick={() => {
             import("@/lib/export-pdf").then(({ exportPdfReport }) =>
               exportPdfReport({ url: scannedUrl, scope: "accessibility", accessibilityData: results, performanceData, seoData })

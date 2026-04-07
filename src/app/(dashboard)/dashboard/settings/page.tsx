@@ -89,8 +89,8 @@ export default function SettingsPage() {
             <Settings className="h-5 w-5 text-slate-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Settings</h1>
-            <p className="text-slate-400 text-sm">View scan history</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">Settings</h1>
+            <p className="text-slate-400 text-xs sm:text-sm">View scan history</p>
           </div>
         </div>
       </motion.div>

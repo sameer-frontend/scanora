@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Tag,
   Smartphone,
+  RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,13 +26,11 @@ import { Button } from "@/components/ui/button";
 import { ScanLoadingState, ScanErrorState } from "@/components/dashboard/scan-states";
 import { ScanForm } from "@/components/dashboard/scan-form";
 import { useScan } from "@/lib/scan-context";
-import type { DeviceType, DeviceSeoResult, SeoData } from "@/lib/types";
+import type { DeviceSeoResult, SeoData, SeoDeepAudit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const ScoreRing = lazy(() => import("@/components/dashboard/score-ring").then(m => ({ default: m.ScoreRing })));
-const DeviceTabs = lazy(() => import("@/components/dashboard/device-tabs").then(m => ({ default: m.DeviceTabs })));
 const ScreenshotCard = lazy(() => import("@/components/dashboard/screenshot-card").then(m => ({ default: m.ScreenshotCard })));
-const CrossDeviceComparison = lazy(() => import("@/components/dashboard/cross-device-comparison").then(m => ({ default: m.CrossDeviceComparison })));
 
 function LazyFallback() {
   return <div className="h-32 animate-pulse rounded-xl bg-slate-800/40" />;
@@ -249,9 +248,9 @@ function PageSeoSections({
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg bg-slate-800/30 p-3 text-center">
-                <div className="text-2xl font-bold text-white">{pageData.images.total}</div>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="rounded-lg bg-slate-800/30 p-2 sm:p-3 text-center">
+                <div className="text-xl sm:text-2xl font-bold text-white">{pageData.images.total}</div>
                 <div className="text-[10px] text-slate-500">Total</div>
               </div>
               <div className="rounded-lg bg-slate-800/30 p-3 text-center">
@@ -463,18 +462,17 @@ export default function SeoPage() {
     seoData: results,
     seoLoading: loading,
     seoError: error,
+    seoScannedUrl: scannedUrl,
     scanSeo,
     accessibilityData,
     performanceData,
-    scannedUrl,
+    clearSeo,
+    seoDeepAudit,
   } = useScan();
 
-  const [activeDevice, setActiveDevice] = useState<DeviceType | null>(null);
   const [screenshotOpen, setScreenshotOpen] = useState(false);
 
-  const currentDevice = activeDevice ?? results?.[0]?.device.type ?? null;
-  const activeResult: DeviceSeoResult | undefined =
-    results?.find((r) => r.device.type === currentDevice);
+  const activeResult: DeviceSeoResult | undefined = results?.[0];
 
   // Empty state
   if (!results && !loading && !error) {
@@ -485,7 +483,10 @@ export default function SeoPage() {
         accentColor="orange"
         icon={Search}
         title="SEO Audit"
-        description="Enter a URL and select a device to run a comprehensive SEO analysis including meta tags, headings, Open Graph, and structured data."
+        description="Enter a URL to run a comprehensive SEO analysis including meta tags, headings, Open Graph, and structured data."
+        scannedUrl={scannedUrl}
+        hideDevicePicker
+        showAdvancedOptions={false}
       />
     );
   }
@@ -506,7 +507,7 @@ export default function SeoPage() {
     return (
       <ScanErrorState
         error={error}
-        onRetry={() => scannedUrl && scanSeo(scannedUrl)}
+        onRetry={clearSeo}
         onNewUrl={scanSeo}
       />
     );
@@ -525,35 +526,29 @@ export default function SeoPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 border border-orange-500/20">
             <Search className="h-5 w-5 text-orange-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">SEO Analyzer</h1>
-            <p className="text-white text-sm">Meta &#183; Headings &#183; Open Graph &#183; Structured Data &#183; Links &#183; Images</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">SEO Analyzer</h1>
+            <p className="text-white text-xs sm:text-sm">Meta &#183; Headings &#183; Open Graph &#183; Structured Data &#183; Links &#183; Images</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => {
-          import("@/lib/export-pdf").then(({ exportPdfReport }) =>
-            exportPdfReport({ url: scannedUrl, scope: "seo", accessibilityData, performanceData, seoData: results })
-          );
-        }}>
-          <Download className="h-4 w-4 mr-1" /> Export PDF
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button variant="outline" size="sm" onClick={clearSeo}>
+            <RotateCcw className="h-4 w-4 mr-1" /> Try New Scan
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            import("@/lib/export-pdf").then(({ exportPdfReport }) =>
+              exportPdfReport({ url: scannedUrl, scope: "seo", accessibilityData, performanceData, seoData: results })
+            );
+          }}>
+            <Download className="h-4 w-4 mr-1" /> Export PDF
+          </Button>
+        </div>
       </div>
-
-      {/* Device Tabs */}
-      <Suspense fallback={<LazyFallback />}>
-        <DeviceTabs
-          results={results}
-          currentDevice={currentDevice}
-          onDeviceChange={setActiveDevice}
-          accentColor="orange"
-          scoreThreshold={80}
-        />
-      </Suspense>
 
       {/* Score + Screenshot + Key Info */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
@@ -662,7 +657,7 @@ export default function SeoPage() {
 
       {/* Quick Stats Row */}
       <div>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
           {[
             { label: "Headings", value: data.headings.headings.length.toString(), icon: Heading1, ok: data.headings.hasH1 && data.headings.hierarchyValid },
             { label: "Links", value: `${data.links.internal + data.links.external}`, icon: Link2, ok: data.links.issues.length === 0 },
@@ -696,32 +691,156 @@ export default function SeoPage() {
         />
       </div>
 
-      {/* Cross-device Comparison */}
-      {results.length > 1 && (
-        <Suspense fallback={<LazyFallback />}>
-          <CrossDeviceComparison
-            results={results}
-            currentDevice={currentDevice}
-            onDeviceChange={setActiveDevice}
-            accentColor="orange"
-            scoreThreshold={80}
-            renderDetails={(r) => {
-              const d = r as DeviceSeoResult;
-              return (
-                <div className="mt-2 space-y-0.5 text-[10px]">
-                  <div className="flex justify-between text-white">
-                    <span>Issues</span>
-                    <span className="text-slate-300">{d.data.issues.filter((i) => i.severity !== "pass").length}</span>
-                  </div>
-                  <div className="flex justify-between text-white">
-                    <span>Passed</span>
-                    <span className="text-emerald-400">{d.data.issues.filter((i) => i.severity === "pass").length}</span>
+      {/* Deep Audit Sections */}
+      {seoDeepAudit && <DeepAuditSections deepAudit={seoDeepAudit} />}
+
+    </div>
+  );
+}
+
+/* Deep Audit additional sections */
+function DeepAuditSections({ deepAudit }: { deepAudit: SeoDeepAudit }) {
+  return (
+    <div className="space-y-4 mt-6">
+      {/* Content Stats */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-orange-400" />
+            <CardTitle className="text-base">Content Analysis</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-lg bg-slate-800/30 p-3 text-center">
+              <div className="text-2xl font-bold text-white">{deepAudit.contentStats.wordCount.toLocaleString()}</div>
+              <div className="text-[10px] text-slate-500">Words</div>
+            </div>
+            <div className="rounded-lg bg-slate-800/30 p-3 text-center">
+              <div className="text-2xl font-bold text-white">{deepAudit.contentStats.readingTime} min</div>
+              <div className="text-[10px] text-slate-500">Reading Time</div>
+            </div>
+            <div className="rounded-lg bg-slate-800/30 p-3 text-center">
+              <div className="text-2xl font-bold text-white">{deepAudit.contentStats.paragraphCount}</div>
+              <div className="text-[10px] text-slate-500">Paragraphs</div>
+            </div>
+            <div className="rounded-lg bg-slate-800/30 p-3 text-center">
+              <div className="text-2xl font-bold text-white">{deepAudit.contentStats.avgSentenceLength}</div>
+              <div className="text-[10px] text-slate-500">Avg Sentence Len</div>
+            </div>
+          </div>
+          {deepAudit.contentStats.wordCount < 300 && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-amber-400">
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              Content is thin ({deepAudit.contentStats.wordCount} words). Aim for 300+ words for better SEO.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Keyword Analysis */}
+      {deepAudit.keywords.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Search className="h-5 w-5 text-orange-400" />
+              <CardTitle className="text-base">Top Keywords</CardTitle>
+              <Badge variant="secondary" className="text-[10px]">{deepAudit.keywords.length}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1.5">
+              {deepAudit.keywords.slice(0, 15).map((kw, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-md bg-slate-800/20 px-3 py-2">
+                  <span className="text-xs font-mono text-white font-medium flex-1">{kw.keyword}</span>
+                  <span className="text-[10px] text-slate-400">{kw.count}× ({kw.density}%)</span>
+                  <div className="flex gap-1">
+                    {kw.inTitle && <Badge variant="success" className="text-[9px] px-1">Title</Badge>}
+                    {kw.inH1 && <Badge variant="success" className="text-[9px] px-1">H1</Badge>}
+                    {kw.inMetaDescription && <Badge variant="success" className="text-[9px] px-1">Meta</Badge>}
+                    {kw.inUrl && <Badge variant="success" className="text-[9px] px-1">URL</Badge>}
                   </div>
                 </div>
-              );
-            }}
-          />
-        </Suspense>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Structured Data Validation */}
+      {deepAudit.structuredDataValidation.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Code2 className="h-5 w-5 text-orange-400" />
+              <CardTitle className="text-base">Structured Data Validation</CardTitle>
+              <Badge variant="secondary" className="text-[10px]">{deepAudit.structuredDataValidation.length} schemas</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {deepAudit.structuredDataValidation.map((schema, i) => (
+                <div key={i} className={cn(
+                  "rounded-lg border p-3",
+                  schema.isValid ? "border-emerald-500/20 bg-emerald-500/5" : "border-red-500/20 bg-red-500/5"
+                )}>
+                  <div className="flex items-center gap-2 mb-2">
+                    {schema.isValid ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-400" />
+                    )}
+                    <span className="text-sm font-medium text-white">{schema.type}</span>
+                    <Badge variant={schema.isValid ? "success" : "destructive"} className="text-[10px]">
+                      {schema.isValid ? "Valid" : "Issues Found"}
+                    </Badge>
+                  </div>
+                  {schema.errors.length > 0 && (
+                    <div className="space-y-1 mb-2">
+                      {schema.errors.map((err, j) => (
+                        <div key={j} className="flex items-center gap-2 text-xs text-red-400">
+                          <XCircle className="h-3 w-3 shrink-0" /> {err}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {schema.warnings.length > 0 && (
+                    <div className="space-y-1">
+                      {schema.warnings.map((warn, j) => (
+                        <div key={j} className="flex items-center gap-2 text-xs text-amber-400">
+                          <AlertTriangle className="h-3 w-3 shrink-0" /> {warn}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Internal Links */}
+      {deepAudit.internalLinks.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Link2 className="h-5 w-5 text-orange-400" />
+              <CardTitle className="text-base">Internal Link Map</CardTitle>
+              <Badge variant="secondary" className="text-[10px]">{deepAudit.internalLinks.length} unique</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              {deepAudit.internalLinks.slice(0, 50).map((link, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-md bg-slate-800/20 px-3 py-1.5">
+                  <span className="text-xs text-emerald-400 font-mono truncate flex-1">{link.to}</span>
+                  {link.text && <span className="text-[10px] text-slate-500 truncate max-w-40">{link.text}</span>}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

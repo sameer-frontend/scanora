@@ -10,9 +10,9 @@ export default function DashboardLayout({
 }) {
   return (
     <ScanProvider>
-      <div className="flex h-screen overflow-hidden bg-[#0a0e1a]">
+      <div className="flex flex-col md:flex-row h-dvh overflow-hidden bg-[#0a0e1a]">
         <DashboardSidebar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
           {children}
         </main>
       </div>

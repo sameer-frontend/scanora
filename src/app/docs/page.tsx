@@ -47,7 +47,7 @@ const tools = [
     icon: Accessibility,
     name: "axe-core",
     description:
-      "The industry-standard open-source accessibility testing engine by Deque Systems. axe-core runs against the live DOM to detect WCAG 2.2 AA violations, mapping each issue to specific WCAG criteria with severity levels and actionable fix suggestions.",
+      "The industry-standard accessibility testing engine by Deque Systems. axe-core runs against the live DOM to detect WCAG 2.2 AA violations, mapping each issue to specific WCAG criteria with severity levels and actionable fix suggestions.",
     details: [
       { label: "Standard", value: "WCAG 2.2 Level AA" },
       { label: "Severities", value: "Critical · Serious · Moderate · Minor" },
@@ -547,10 +547,9 @@ export default function DocsPage() {
               <Link href="/#how-it-works" className="hover:text-white transition-colors">How It Works</Link>
               <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
               <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
-              <a href="https://github.com/sameer-frontend/scanora" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub</a>
             </div>
             <p className="text-sm text-slate-500">
-              © {new Date().getFullYear()} Scanora. Free &amp; open source.
+              © {new Date().getFullYear()} Scanora. All rights reserved.
             </p>
           </div>
         </div>

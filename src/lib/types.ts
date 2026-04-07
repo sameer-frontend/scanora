@@ -267,3 +267,209 @@ export interface DeviceSeoResult {
   screenshot: string;
   data: SeoData;
 }
+
+// ── Multi-Run Averaging types ──────────────────────────────────
+
+export interface MultiRunStats {
+  runs: number;
+  scores: number[];
+  average: number;
+  best: number;
+  worst: number;
+  variance: number;
+  standardDeviation: number;
+  metricAverages?: Record<string, number>;
+}
+
+export interface MultiRunPerformanceResult {
+  device: DeviceProfile;
+  screenshot: string;
+  stats: MultiRunStats;
+  runs: PerformanceData[];
+  averagedData: PerformanceData;
+}
+
+export interface MultiRunAccessibilityResult {
+  device: DeviceProfile;
+  screenshot: string;
+  stats: MultiRunStats;
+  runs: AccessibilityData[];
+  averagedData: AccessibilityData;
+}
+
+// ── Device Throttling Profiles ────────────────────────────────
+
+export type ThrottleProfile = "low-end-android" | "mid-range-android" | "iphone" | "desktop-high" | "custom";
+
+export interface ThrottlePreset {
+  id: ThrottleProfile;
+  label: string;
+  icon: string;
+  cpuSlowdown: number;
+  networkProfile: string;
+  description: string;
+}
+
+export const THROTTLE_PRESETS: ThrottlePreset[] = [
+  { id: "low-end-android", label: "Low-end Android", icon: "📱", cpuSlowdown: 6, networkProfile: "slow-3g", description: "Moto G4 · Slow 3G · 6× CPU" },
+  { id: "mid-range-android", label: "Mid-range Android", icon: "📱", cpuSlowdown: 4, networkProfile: "slow-4g", description: "Pixel 5 · Slow 4G · 4× CPU" },
+  { id: "iphone", label: "iPhone", icon: "📱", cpuSlowdown: 2, networkProfile: "4g", description: "iPhone 15 · 4G LTE · 2× CPU" },
+  { id: "desktop-high", label: "Desktop High-end", icon: "🖥️", cpuSlowdown: 1, networkProfile: "cable", description: "Fast desktop · Cable · No throttle" },
+];
+
+// ── Core Web Vitals Timeline ──────────────────────────────────
+
+export interface TimelineEvent {
+  label: string;
+  time: number;
+  type: "fcp" | "lcp" | "cls" | "inp" | "ttfb" | "dom" | "load" | "long-task";
+  rating?: "good" | "needs-improvement" | "poor";
+  value?: string;
+}
+
+export interface CWVTimeline {
+  events: TimelineEvent[];
+  totalDuration: number;
+  layoutShifts: { time: number; value: number; element?: string }[];
+  longTasks: { start: number; duration: number }[];
+  inp: CoreWebVital;
+}
+
+// ── Bundle Analyzer ───────────────────────────────────────────
+
+export interface BundleChunk {
+  name: string;
+  size: number;
+  gzipSize: number;
+  type: "js" | "css" | "image" | "font" | "other";
+  isFirstLoad: boolean;
+  route?: string;
+}
+
+export type TechCategory =
+  | "framework"
+  | "cms"
+  | "cdn"
+  | "analytics"
+  | "library"
+  | "ui"
+  | "build-tool"
+  | "hosting"
+  | "font-service"
+  | "security"
+  | "other";
+
+export interface DetectedTechnology {
+  name: string;
+  category: TechCategory;
+  version?: string;
+  confidence: number;  // 0–100
+  website?: string;
+}
+
+export interface BundleAnalysis {
+  url: string;
+  totalJsSize: number;
+  totalCssSize: number;
+  totalTransferSize: number;
+  chunks: BundleChunk[];
+  unusedJs: { url: string; totalBytes: number; unusedBytes: number; percentUnused: number }[];
+  duplicateModules: { name: string; count: number; totalSize: number }[];
+  treemapData: { name: string; size: number; children?: { name: string; size: number }[] }[];
+  technologies: DetectedTechnology[];
+}
+
+// ── SEO Deep Audit ────────────────────────────────────────────
+
+export interface StructuredDataValidation {
+  type: string;
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  fields: Record<string, unknown>;
+}
+
+export interface InternalLink {
+  from: string;
+  to: string;
+  text: string;
+  status?: number;
+}
+
+export interface KeywordAnalysis {
+  keyword: string;
+  count: number;
+  density: number;
+  inTitle: boolean;
+  inH1: boolean;
+  inMetaDescription: boolean;
+  inUrl: boolean;
+}
+
+export interface BrokenLink {
+  url: string;
+  statusCode: number;
+  anchorText: string;
+  foundOn: string;
+}
+
+export interface SeoDeepAudit {
+  structuredDataValidation: StructuredDataValidation[];
+  internalLinks: InternalLink[];
+  keywords: KeywordAnalysis[];
+  brokenLinks: BrokenLink[];
+  contentStats: {
+    wordCount: number;
+    readingTime: number;
+    paragraphCount: number;
+    avgSentenceLength: number;
+  };
+}
+
+// ── Next.js Specific Insights ─────────────────────────────────
+
+export interface NextJsInsight {
+  id: string;
+  category: "image-optimization" | "component-pattern" | "hydration" | "rendering" | "bundle" | "config";
+  severity: "critical" | "warning" | "info" | "pass";
+  title: string;
+  description: string;
+  recommendation?: string;
+  element?: string;
+  savings?: string;
+}
+
+export interface NextJsAnalysis {
+  url: string;
+  isNextJs: boolean;
+  version?: string;
+  renderingMode?: "static" | "dynamic" | "isr" | "mixed";
+  insights: NextJsInsight[];
+  stats: {
+    totalImages: number;
+    nextImages: number;
+    unoptimizedImages: number;
+    clientComponents: number;
+    serverIndicators: number;
+    hydrationSize: number;
+    bundleChunks: number;
+  };
+  score: number;
+}
+
+// ── A/B Performance Testing ───────────────────────────────────
+
+export interface ABComparisonResult {
+  urlA: { url: string; performance: PerformanceData; screenshot: string };
+  urlB: { url: string; performance: PerformanceData; screenshot: string };
+  comparison: {
+    scoreDiff: number;
+    lcpDiff: number;
+    fcpDiff: number;
+    clsDiff: number;
+    tbtDiff: number;
+    totalSizeDiff: number;
+    winner: "A" | "B" | "tie";
+    improvementAreas: { metric: string; percentChange: number; improved: boolean }[];
+  };
+}

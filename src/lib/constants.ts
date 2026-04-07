@@ -17,7 +17,7 @@ export const deviceIconMap: Record<DeviceType, typeof Smartphone> = {
   desktop: Monitor,
 };
 
-export type AccentColor = "emerald" | "cyan" | "orange";
+export type AccentColor = "emerald" | "cyan" | "orange" | "violet";
 
 export const accentStyles: Record<AccentColor, {
   text: string;
@@ -58,5 +58,15 @@ export const accentStyles: Record<AccentColor, {
     activeBorder: "border-orange-500/25",
     activeBgLight: "bg-orange-500/5",
     linkColor: "text-orange-400",
+  },
+  violet: {
+    text: "text-violet-400",
+    bg: "bg-violet-500/10",
+    border: "border-violet-500/20",
+    pingBg: "bg-violet-500/20",
+    activeBg: "bg-violet-500/10",
+    activeBorder: "border-violet-500/25",
+    activeBgLight: "bg-violet-500/5",
+    linkColor: "text-violet-400",
   },
 };
