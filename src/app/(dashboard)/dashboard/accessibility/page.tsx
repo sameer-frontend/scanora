@@ -80,6 +80,7 @@ export default function AccessibilityPage() {
         title="Accessibility Audit"
         description="Enter a URL and select a device to run a WCAG 2.2 accessibility audit powered by Playwright and axe-core."
         scannedUrl={scannedUrl}
+        showAdvancedOptions={false}
       />
     );
   }
@@ -100,7 +101,7 @@ export default function AccessibilityPage() {
     return (
       <ScanErrorState
         error={error}
-        onRetry={() => scannedUrl && scanAccessibility(scannedUrl)}
+        onRetry={clearAccessibility}
         onNewUrl={scanAccessibility}
       />
     );

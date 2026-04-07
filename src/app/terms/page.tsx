@@ -17,7 +17,7 @@ export default function TermsPage() {
       <nav className="border-b border-slate-800/50 backdrop-blur-xl bg-[#0a0e1a]/80 sticky top-0 z-50">
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/25">
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/25">
               <Shield className="h-5 w-5 text-white" />
             </div>
             <span className="text-lg font-bold text-white">Scanora</span>
@@ -185,7 +185,7 @@ export default function TermsPage() {
         <div className="mx-auto max-w-7xl px-6 py-12">
           <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-emerald-500 to-cyan-500">
                 <Shield className="h-4 w-4 text-white" />
               </div>
               <span className="font-semibold text-white">Scanora</span>

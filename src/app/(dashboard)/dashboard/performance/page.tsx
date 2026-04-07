@@ -26,6 +26,8 @@ const ScoreRing = lazy(() => import("@/components/dashboard/score-ring").then(m 
 const DeviceTabs = lazy(() => import("@/components/dashboard/device-tabs").then(m => ({ default: m.DeviceTabs })));
 const ScreenshotCard = lazy(() => import("@/components/dashboard/screenshot-card").then(m => ({ default: m.ScreenshotCard })));
 const CrossDeviceComparison = lazy(() => import("@/components/dashboard/cross-device-comparison").then(m => ({ default: m.CrossDeviceComparison })));
+const CWVTimelineCard = lazy(() => import("@/components/dashboard/cwv-timeline").then(m => ({ default: m.CWVTimelineCard })));
+const MultiRunStatsCard = lazy(() => import("@/components/dashboard/multi-run-stats").then(m => ({ default: m.MultiRunStatsCard })));
 
 function LazyFallback() {
   return <div className="h-32 animate-pulse rounded-xl bg-slate-800/40" />;
@@ -63,6 +65,8 @@ export default function PerformancePage() {
     accessibilityData,
     seoData,
     clearPerformance,
+    multiRunStats,
+    cwvTimeline,
   } = useScan();
 
   const [activeDevice, setActiveDevice] = useState<DeviceType | null>(null);
@@ -104,7 +108,7 @@ export default function PerformancePage() {
     return (
       <ScanErrorState
         error={error}
-        onRetry={() => scannedUrl && scanPerformance(scannedUrl)}
+        onRetry={clearPerformance}
         onNewUrl={scanPerformance}
       />
     );
@@ -274,6 +278,20 @@ export default function PerformancePage() {
               );
             }}
           />
+        </Suspense>
+      )}
+
+      {/* Multi-Run Stats */}
+      {multiRunStats && (
+        <Suspense fallback={<LazyFallback />}>
+          <MultiRunStatsCard stats={multiRunStats} accentColor="cyan" />
+        </Suspense>
+      )}
+
+      {/* CWV Timeline */}
+      {cwvTimeline && (
+        <Suspense fallback={<LazyFallback />}>
+          <CWVTimelineCard timeline={cwvTimeline} />
         </Suspense>
       )}
 

@@ -115,8 +115,8 @@ export default function LandingPage() {
     <div className="relative min-h-screen overflow-hidden">
       {/* Background effects */}
       <div className="fixed inset-0 bg-grid pointer-events-none" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="fixed bottom-0 right-0 w-[600px] h-[400px] bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-200 h-150 bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="fixed bottom-0 right-0 w-150 h-100 bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Navigation */}
       <motion.nav
@@ -127,7 +127,7 @@ export default function LandingPage() {
       >
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/25">
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/25">
               <Shield className="h-5 w-5 text-white" />
             </div>
             <span className="text-lg font-bold text-white">Scanora</span>
@@ -227,7 +227,7 @@ export default function LandingPage() {
           transition={{ delay: 0.6, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="relative mt-20 mx-auto max-w-5xl"
         >
-          <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/20 via-cyan-500/20 to-orange-500/20 rounded-2xl blur-xl opacity-50" />
+          <div className="absolute -inset-4 bg-linear-to-r from-emerald-500/20 via-cyan-500/20 to-orange-500/20 rounded-2xl blur-xl opacity-50" />
           <div className="relative rounded-xl border border-slate-700/50 bg-slate-900/90 backdrop-blur-sm shadow-2xl overflow-hidden">
             {/* Browser chrome */}
             <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-3">
@@ -331,7 +331,7 @@ export default function LandingPage() {
               custom={i}
             >
               <Card className={`relative group h-full overflow-hidden hover:border-slate-700 transition-all duration-300 hover:${pillar.glow} hover:shadow-2xl`}>
-                <div className={`absolute inset-0 bg-gradient-to-br ${pillar.gradient} opacity-0 group-hover:opacity-[0.03] transition-opacity duration-500`} />
+                <div className={`absolute inset-0 bg-linear-to-br ${pillar.gradient} opacity-0 group-hover:opacity-[0.03] transition-opacity duration-500`} />
                 <CardContent className="relative p-6">
                   <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${pillar.bg} ${pillar.border} border mb-5`}>
                     <pillar.icon className={`h-6 w-6 ${pillar.color}`} />
@@ -424,7 +424,7 @@ export default function LandingPage() {
           variants={scaleIn}
         >
           <Card className="relative overflow-hidden border-slate-700/50">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-cyan-500/5 to-orange-500/10" />
+            <div className="absolute inset-0 bg-linear-to-br from-emerald-500/10 via-cyan-500/5 to-orange-500/10" />
             <CardContent className="relative p-12 md:p-16 text-center">
               <h2 className="text-3xl font-bold md:text-4xl">
                 Ready to audit your website?
@@ -451,7 +451,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6 py-12">
           <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-emerald-500 to-cyan-500">
                 <Shield className="h-4 w-4 text-white" />
               </div>
               <span className="font-semibold text-white">Scanora</span>

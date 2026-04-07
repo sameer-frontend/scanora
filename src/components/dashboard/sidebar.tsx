@@ -11,11 +11,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Globe,
   Menu,
   X,
+  Code2,
+  GitCompareArrows,
+  Package,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { flushSync } from "react-dom";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -35,6 +38,21 @@ const navItems = [
     icon: Search,
   },
   {
+    label: "Next.js Insights",
+    href: "/dashboard/nextjs",
+    icon: Code2,
+  },
+  {
+    label: "A/B Compare",
+    href: "/dashboard/ab-compare",
+    icon: GitCompareArrows,
+  },
+  {
+    label: "Bundle & Tech",
+    href: "/dashboard/bundle",
+    icon: Package,
+  },
+  {
     label: "Settings",
     href: "/dashboard/settings",
     icon: Settings,
@@ -45,10 +63,14 @@ export default function DashboardSidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const prevPathnameRef = useRef(pathname);
 
   // Close mobile drawer on route change
   useEffect(() => {
-    setMobileOpen(false);
+    if (prevPathnameRef.current !== pathname) {
+      prevPathnameRef.current = pathname;
+      flushSync(() => setMobileOpen(false));
+    }
   }, [pathname]);
 
   const sidebarContent = (isMobile: boolean) => (

@@ -5,6 +5,10 @@ import type {
   DevicePerformanceResult,
   DeviceProfile,
   AssetFile,
+  MultiRunStats,
+  CWVTimeline,
+  TimelineEvent,
+  ThrottleProfile,
 } from "@/lib/types";
 
 export const maxDuration = 300;
@@ -31,6 +35,10 @@ interface PageMetrics {
   domContentLoaded: number;
   loadTime: number;
   resources: ResourceEntry[];
+  // Enhanced timeline data
+  inp: number;
+  layoutShifts: { time: number; value: number; element?: string }[];
+  longTasks: { start: number; duration: number }[];
 }
 
 // Throttle configs per device type — models real-world network conditions
@@ -66,6 +74,50 @@ const THROTTLE_PROFILES: Record<
     cpuRate: 1,
   },
 };
+
+// Custom throttle profiles for user-selected device categories
+const CUSTOM_THROTTLE_PROFILES: Record<ThrottleProfile, typeof THROTTLE_PROFILES[string]> = {
+  "low-end-android": {
+    downloadThroughput: (400 * 1024) / 8,    // Slow 3G ~400kbps
+    uploadThroughput: (200 * 1024) / 8,
+    latency: 400,
+    cpuRate: 6,
+  },
+  "mid-range-android": {
+    downloadThroughput: (1.6 * 1024 * 1024) / 8,  // Slow 4G
+    uploadThroughput: (750 * 1024) / 8,
+    latency: 150,
+    cpuRate: 4,
+  },
+  "iphone": {
+    downloadThroughput: (4 * 1024 * 1024) / 8,     // 4G LTE
+    uploadThroughput: (3 * 1024 * 1024) / 8,
+    latency: 70,
+    cpuRate: 2,
+  },
+  "desktop-high": {
+    downloadThroughput: (10 * 1024 * 1024) / 8,
+    uploadThroughput: (5 * 1024 * 1024) / 8,
+    latency: 40,
+    cpuRate: 1,
+  },
+  "custom": {
+    downloadThroughput: (10 * 1024 * 1024) / 8,
+    uploadThroughput: (5 * 1024 * 1024) / 8,
+    latency: 40,
+    cpuRate: 1,
+  },
+};
+
+function getThrottleForRequest(
+  deviceType: string,
+  customProfile?: ThrottleProfile
+): typeof THROTTLE_PROFILES[string] {
+  if (customProfile && customProfile !== "custom") {
+    return CUSTOM_THROTTLE_PROFILES[customProfile];
+  }
+  return THROTTLE_PROFILES[deviceType] ?? THROTTLE_PROFILES.desktop;
+}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -342,7 +394,8 @@ function buildPerfData(targetUrl: string, metrics: PageMetrics): PerformanceData
 async function scanDevice(
   browser: Awaited<ReturnType<typeof launchBrowser>>,
   device: DeviceProfile,
-  targetUrl: string
+  targetUrl: string,
+  customThrottle?: ThrottleProfile
 ): Promise<DevicePerformanceResult> {
   const ctxOpts = getStealthContextOptions(device);
   const context = await browser.newContext(ctxOpts);
@@ -354,7 +407,10 @@ async function scanDevice(
     const g = globalThis as unknown as Record<string, unknown>;
     g.__wg_lcp = 0;
     g.__wg_cls = 0;
-    g.__wg_longTasks = [] as number[];
+    g.__wg_longTasks = [] as { start: number; duration: number }[];
+    g.__wg_layoutShifts = [] as { time: number; value: number; element?: string }[];
+    g.__wg_inp = 0;
+    g.__wg_interactions = [] as number[];
 
     try {
       new PerformanceObserver((list) => {
@@ -367,10 +423,17 @@ async function scanDevice(
     try {
       new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          if (!(entry as unknown as { hadRecentInput: boolean }).hadRecentInput) {
-            g.__wg_cls =
-              (g.__wg_cls as number) +
-              (entry as unknown as { value: number }).value;
+          const lsEntry = entry as unknown as { hadRecentInput: boolean; value: number; sources?: { node?: Element }[] };
+          if (!lsEntry.hadRecentInput) {
+            g.__wg_cls = (g.__wg_cls as number) + lsEntry.value;
+            const shift: { time: number; value: number; element?: string } = {
+              time: entry.startTime,
+              value: lsEntry.value,
+            };
+            if (lsEntry.sources?.[0]?.node) {
+              try { shift.element = (lsEntry.sources[0].node as Element).tagName; } catch { /* */ }
+            }
+            (g.__wg_layoutShifts as typeof shift[]).push(shift);
           }
         }
       }).observe({ type: "layout-shift", buffered: true });
@@ -379,14 +442,33 @@ async function scanDevice(
     try {
       new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          (g.__wg_longTasks as number[]).push(entry.duration);
+          (g.__wg_longTasks as { start: number; duration: number }[]).push({
+            start: entry.startTime,
+            duration: entry.duration,
+          });
         }
       }).observe({ type: "longtask", buffered: true });
+    } catch { /* unsupported */ }
+
+    // INP tracking via event timing API
+    try {
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          const dur = (entry as unknown as { duration: number }).duration;
+          if (dur > 0) {
+            (g.__wg_interactions as number[]).push(dur);
+            // INP is the worst interaction, ignoring the very worst if >50 interactions
+            const sorted = [...(g.__wg_interactions as number[])].sort((a, b) => b - a);
+            const idx = sorted.length > 50 ? 1 : 0;
+            g.__wg_inp = sorted[idx] || 0;
+          }
+        }
+      }).observe({ type: "event", buffered: true });
     } catch { /* unsupported */ }
   });
 
   // ── Apply network & CPU throttling via CDP ──────────────────
-  const throttle = THROTTLE_PROFILES[device.type] ?? THROTTLE_PROFILES.desktop;
+  const throttle = getThrottleForRequest(device.type, customThrottle);
   const cdp = await context.newCDPSession(page);
 
   // Track actual transfer sizes via CDP (more reliable than Performance API
@@ -445,10 +527,16 @@ async function scanDevice(
     const cls = (g.__wg_cls as number) || 0;
 
     // TBT = sum of (duration - 50ms) for all long tasks > 50ms
-    const longTasks = (g.__wg_longTasks as number[]) || [];
-    const tbt = longTasks
-      .filter((d) => d > 50)
-      .reduce((sum, d) => sum + (d - 50), 0);
+    const longTasksRaw = (g.__wg_longTasks as { start: number; duration: number }[]) || [];
+    const tbt = longTasksRaw
+      .filter((t) => t.duration > 50)
+      .reduce((sum, t) => sum + (t.duration - 50), 0);
+
+    // INP from observer
+    const inp = (g.__wg_inp as number) || 0;
+
+    // Layout shifts with details
+    const layoutShifts = (g.__wg_layoutShifts as { time: number; value: number; element?: string }[]) || [];
 
     const resourceEntries = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
     return {
@@ -464,6 +552,9 @@ async function scanDevice(
         transferSize: r.transferSize || r.encodedBodySize || r.decodedBodySize || 0,
         initiatorType: r.initiatorType,
       })),
+      inp,
+      layoutShifts,
+      longTasks: longTasksRaw,
     };
   });
 
@@ -523,7 +614,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { url, devices } = body as { url?: unknown; devices?: unknown };
+  const { url, devices, throttleProfile: reqThrottle, runs: reqRuns } = body as {
+    url?: unknown;
+    devices?: unknown;
+    throttleProfile?: ThrottleProfile;
+    runs?: number;
+  };
 
   if (!url || typeof url !== "string") {
     return NextResponse.json({ error: "URL is required" }, { status: 400 });
@@ -545,19 +641,80 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No valid devices specified" }, { status: 400 });
   }
 
+  const numRuns = Math.min(Math.max(1, reqRuns || 1), 5);
+
   let browser: Awaited<ReturnType<typeof launchBrowser>> | null = null;
   try {
     browser = await launchBrowser();
     const targetUrl = parsedUrl.toString();
 
+    if (numRuns > 1) {
+      // Multi-run mode: run multiple times and compute stats
+      const allRunResults: DevicePerformanceResult[][] = [];
+
+      for (let run = 0; run < numRuns; run++) {
+        const runResults = await Promise.all(
+          selectedDevices.map((device) => scanDevice(browser!, device, targetUrl, reqThrottle))
+        );
+        allRunResults.push(runResults);
+      }
+
+      // Use the last run's results as the primary display data
+      const primaryResults = allRunResults[allRunResults.length - 1];
+
+      // Compute multi-run stats (for the first device)
+      const scores = allRunResults.map((run) => run[0].data.score);
+      const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const variance = scores.reduce((sum, s) => sum + Math.pow(s - avg, 2), 0) / scores.length;
+
+      const multiRunStats: MultiRunStats = {
+        runs: numRuns,
+        scores,
+        average: Math.round(avg),
+        best: Math.max(...scores),
+        worst: Math.min(...scores),
+        variance: Math.round(variance * 100) / 100,
+        standardDeviation: Math.round(Math.sqrt(variance) * 100) / 100,
+        metricAverages: {
+          lcp: Math.round(allRunResults.reduce((s, r) => s + r[0].data.metrics.lcp, 0) / numRuns),
+          fcp: Math.round(allRunResults.reduce((s, r) => s + r[0].data.metrics.fcp, 0) / numRuns),
+          tbt: Math.round(allRunResults.reduce((s, r) => s + r[0].data.metrics.tbt, 0) / numRuns),
+          cls: Math.round((allRunResults.reduce((s, r) => s + r[0].data.metrics.cls, 0) / numRuns) * 1000) / 1000,
+          ttfb: Math.round(allRunResults.reduce((s, r) => s + r[0].data.metrics.ttfb, 0) / numRuns),
+        },
+      };
+
+      // Build CWV timeline from the latest run
+      const latestData = primaryResults[0].data;
+      const cwvTimeline: CWVTimeline = buildCwvTimeline(latestData);
+
+      await browser.close();
+      browser = null;
+
+      return NextResponse.json({
+        results: primaryResults,
+        multiRunStats,
+        cwvTimeline,
+      }, {
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+      });
+    }
+
+    // Single run mode
     const results = await Promise.all(
-      selectedDevices.map((device) => scanDevice(browser!, device, targetUrl))
+      selectedDevices.map((device) => scanDevice(browser!, device, targetUrl, reqThrottle))
     );
+
+    // Build CWV timeline
+    const cwvTimeline: CWVTimeline = buildCwvTimeline(results[0].data);
 
     await browser.close();
     browser = null;
 
-    return NextResponse.json(results, {
+    return NextResponse.json({
+      results,
+      cwvTimeline,
+    }, {
       headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
     });
   } catch (err) {
@@ -573,4 +730,78 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ error: `Scan failed: ${message}` }, { status: 500 });
   }
+}
+
+function rateInp(value: number): "good" | "needs-improvement" | "poor" {
+  if (value <= 200) return "good";
+  if (value <= 500) return "needs-improvement";
+  return "poor";
+}
+
+function buildCwvTimeline(data: PerformanceData): CWVTimeline {
+  const events: TimelineEvent[] = [];
+
+  if (data.metrics.ttfb > 0) {
+    events.push({
+      label: "TTFB",
+      time: data.metrics.ttfb,
+      type: "ttfb",
+      value: `${data.metrics.ttfb}ms`,
+    });
+  }
+  if (data.metrics.fcp > 0) {
+    events.push({
+      label: "First Contentful Paint",
+      time: data.metrics.fcp,
+      type: "fcp",
+      rating: data.coreWebVitals.fcp.rating,
+      value: data.coreWebVitals.fcp.value,
+    });
+  }
+  if (data.metrics.lcp > 0) {
+    events.push({
+      label: "Largest Contentful Paint",
+      time: data.metrics.lcp,
+      type: "lcp",
+      rating: data.coreWebVitals.lcp.rating,
+      value: data.coreWebVitals.lcp.value,
+    });
+  }
+  if (data.metrics.domContentLoaded > 0) {
+    events.push({
+      label: "DOM Content Loaded",
+      time: data.metrics.domContentLoaded,
+      type: "dom",
+      value: `${data.metrics.domContentLoaded}ms`,
+    });
+  }
+  if (data.metrics.loadTime > 0) {
+    events.push({
+      label: "Page Load",
+      time: data.metrics.loadTime,
+      type: "load",
+      value: `${data.metrics.loadTime}ms`,
+    });
+  }
+
+  events.sort((a, b) => a.time - b.time);
+
+  const totalDuration = Math.max(data.metrics.loadTime, data.metrics.lcp, data.metrics.fcp) + 500;
+
+  // INP metric (using 0 if not measured — lab environment may not trigger interactions)
+  const inpValue = 0; // INP is measured from actual user interactions, lab data won't have this
+  const inp = {
+    value: inpValue > 0 ? `${inpValue}ms` : "N/A (lab)",
+    numericValue: inpValue,
+    rating: rateInp(inpValue),
+    description: "Responsiveness to user interactions (requires real interactions)",
+  };
+
+  return {
+    events,
+    totalDuration,
+    layoutShifts: [],
+    longTasks: [],
+    inp,
+  };
 }

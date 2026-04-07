@@ -13,11 +13,24 @@ import type {
   DeviceAccessibilityResult,
   DevicePerformanceResult,
   DeviceSeoResult,
+  ThrottleProfile,
+  BundleAnalysis,
+  NextJsAnalysis,
+  ABComparisonResult,
+  SeoDeepAudit,
+  MultiRunStats,
+  CWVTimeline,
 } from "@/lib/types";
 
 interface ScanContextType {
   selectedDevices: DeviceType[];
   setSelectedDevices: (d: DeviceType[]) => void;
+
+  // Scan options
+  throttleProfile: ThrottleProfile;
+  setThrottleProfile: (p: ThrottleProfile) => void;
+  multiRunCount: number;
+  setMultiRunCount: (n: number) => void;
 
   scanAccessibility: (inputUrl: string) => void;
   accessibilityScannedUrl: string;
@@ -33,12 +46,40 @@ interface ScanContextType {
   performanceError: string | null;
   clearPerformance: () => void;
 
+  // Multi-run stats
+  multiRunStats: MultiRunStats | null;
+  cwvTimeline: CWVTimeline | null;
+
   scanSeo: (inputUrl: string) => void;
   seoScannedUrl: string;
   seoData: DeviceSeoResult[] | null;
   seoLoading: boolean;
   seoError: string | null;
   clearSeo: () => void;
+
+  // SEO Deep Audit
+  seoDeepAudit: SeoDeepAudit | null;
+
+  // Bundle Analysis
+  fetchBundleAnalysis: (inputUrl: string) => void;
+  bundleAnalysis: BundleAnalysis | null;
+  bundleLoading: boolean;
+  bundleError: string | null;
+  clearBundleAnalysis: () => void;
+
+  // Next.js Insights
+  fetchNextJsInsights: (inputUrl: string) => void;
+  nextJsAnalysis: NextJsAnalysis | null;
+  nextJsLoading: boolean;
+  nextJsError: string | null;
+  clearNextJsInsights: () => void;
+
+  // A/B Comparison
+  runABComparison: (urlA: string, urlB: string) => void;
+  abComparison: ABComparisonResult | null;
+  abLoading: boolean;
+  abError: string | null;
+  clearABComparison: () => void;
 }
 
 const ScanContext = createContext<ScanContextType | null>(null);
@@ -49,6 +90,8 @@ function normalizeUrl(input: string) {
 
 export function ScanProvider({ children }: { children: ReactNode }) {
   const [selectedDevices, setSelectedDevices] = useState<DeviceType[]>(["desktop"]);
+  const [throttleProfile, setThrottleProfile] = useState<ThrottleProfile>("desktop-high");
+  const [multiRunCount, setMultiRunCount] = useState(1);
 
   const [accessibilityScannedUrl, setAccessibilityScannedUrl] = useState("");
   const [accessibilityData, setAccessibilityData] = useState<DeviceAccessibilityResult[] | null>(null);
@@ -60,10 +103,27 @@ export function ScanProvider({ children }: { children: ReactNode }) {
   const [performanceLoading, setPerformanceLoading] = useState(false);
   const [performanceError, setPerformanceError] = useState<string | null>(null);
 
+  const [multiRunStats, setMultiRunStats] = useState<MultiRunStats | null>(null);
+  const [cwvTimeline, setCwvTimeline] = useState<CWVTimeline | null>(null);
+
   const [seoScannedUrl, setSeoScannedUrl] = useState("");
   const [seoData, setSeoData] = useState<DeviceSeoResult[] | null>(null);
   const [seoLoading, setSeoLoading] = useState(false);
   const [seoError, setSeoError] = useState<string | null>(null);
+
+  const [seoDeepAudit, setSeoDeepAudit] = useState<SeoDeepAudit | null>(null);
+
+  const [bundleAnalysis, setBundleAnalysis] = useState<BundleAnalysis | null>(null);
+  const [bundleLoading, setBundleLoading] = useState(false);
+  const [bundleError, setBundleError] = useState<string | null>(null);
+
+  const [nextJsAnalysis, setNextJsAnalysis] = useState<NextJsAnalysis | null>(null);
+  const [nextJsLoading, setNextJsLoading] = useState(false);
+  const [nextJsError, setNextJsError] = useState<string | null>(null);
+
+  const [abComparison, setAbComparison] = useState<ABComparisonResult | null>(null);
+  const [abLoading, setAbLoading] = useState(false);
+  const [abError, setAbError] = useState<string | null>(null);
 
   const a11yAbortRef = useRef<AbortController | null>(null);
   const perfAbortRef = useRef<AbortController | null>(null);
@@ -132,7 +192,10 @@ export function ScanProvider({ children }: { children: ReactNode }) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             cache: "no-store",
-            body: JSON.stringify({ url: normalized, devices: selectedDevices }),
+            body: JSON.stringify({
+              url: normalized,
+              devices: selectedDevices,
+            }),
             signal: controller.signal,
           });
           if (!res.ok) {
@@ -168,6 +231,8 @@ export function ScanProvider({ children }: { children: ReactNode }) {
       setPerformanceData(null);
       setPerformanceLoading(true);
       setPerformanceError(null);
+      setMultiRunStats(null);
+      setCwvTimeline(null);
 
       (async () => {
         try {
@@ -175,17 +240,32 @@ export function ScanProvider({ children }: { children: ReactNode }) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             cache: "no-store",
-            body: JSON.stringify({ url: normalized, devices: selectedDevices }),
+            body: JSON.stringify({
+              url: normalized,
+              devices: selectedDevices,
+              throttleProfile,
+              runs: multiRunCount,
+            }),
             signal: controller.signal,
           });
           if (!res.ok) {
             const err = await res.json().catch(() => ({ error: "Unknown error" }));
             throw new Error(err.error || `HTTP ${res.status}`);
           }
-          const data = (await res.json()) as DevicePerformanceResult[];
+          const json = await res.json();
           if (!controller.signal.aborted) {
-            setPerformanceData(data);
-            persistResult("performance", normalized, data);
+            // API returns { results, multiRunStats?, cwvTimeline? } when runs > 1
+            if (json.results) {
+              setPerformanceData(json.results as DevicePerformanceResult[]);
+              if (json.multiRunStats) setMultiRunStats(json.multiRunStats as MultiRunStats);
+              if (json.cwvTimeline) setCwvTimeline(json.cwvTimeline as CWVTimeline);
+              persistResult("performance", normalized, json.results);
+            } else {
+              // Single run compat - results is the top level array
+              const data = json as DevicePerformanceResult[];
+              setPerformanceData(data);
+              persistResult("performance", normalized, data);
+            }
           }
         } catch (err) {
           if (!controller.signal.aborted) {
@@ -196,7 +276,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
         }
       })();
     },
-    [selectedDevices, persistResult],
+    [selectedDevices, throttleProfile, multiRunCount, persistResult],
   );
 
   const scanSeo = useCallback(
@@ -211,6 +291,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
       setSeoData(null);
       setSeoLoading(true);
       setSeoError(null);
+      setSeoDeepAudit(null);
 
       (async () => {
         try {
@@ -218,17 +299,28 @@ export function ScanProvider({ children }: { children: ReactNode }) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             cache: "no-store",
-            body: JSON.stringify({ url: normalized }),
+            body: JSON.stringify({
+              url: normalized,
+              devices: selectedDevices,
+              deepAudit: true,
+            }),
             signal: controller.signal,
           });
           if (!res.ok) {
             const err = await res.json().catch(() => ({ error: "Unknown error" }));
             throw new Error(err.error || `HTTP ${res.status}`);
           }
-          const data = (await res.json()) as DeviceSeoResult[];
+          const json = await res.json();
           if (!controller.signal.aborted) {
-            setSeoData(data);
-            persistResult("seo", normalized, data);
+            if (json.results) {
+              setSeoData(json.results as DeviceSeoResult[]);
+              if (json.deepAudit) setSeoDeepAudit(json.deepAudit as SeoDeepAudit);
+              persistResult("seo", normalized, json.results);
+            } else {
+              const data = json as DeviceSeoResult[];
+              setSeoData(data);
+              persistResult("seo", normalized, data);
+            }
           }
         } catch (err) {
           if (!controller.signal.aborted) {
@@ -254,6 +346,8 @@ export function ScanProvider({ children }: { children: ReactNode }) {
     setPerformanceData(null);
     setPerformanceLoading(false);
     setPerformanceError(null);
+    setMultiRunStats(null);
+    setCwvTimeline(null);
   }, []);
 
   const clearSeo = useCallback(() => {
@@ -261,6 +355,146 @@ export function ScanProvider({ children }: { children: ReactNode }) {
     setSeoData(null);
     setSeoLoading(false);
     setSeoError(null);
+    setSeoDeepAudit(null);
+  }, []);
+
+  // ── Bundle Analysis ──────────────────────────────────────────
+  const bundleAbortRef = useRef<AbortController | null>(null);
+
+  const fetchBundleAnalysis = useCallback((inputUrl: string) => {
+    if (!inputUrl.trim()) return;
+    if (bundleAbortRef.current) bundleAbortRef.current.abort();
+    const controller = new AbortController();
+    bundleAbortRef.current = controller;
+
+    const normalized = normalizeUrl(inputUrl);
+    setBundleAnalysis(null);
+    setBundleLoading(true);
+    setBundleError(null);
+
+    (async () => {
+      try {
+        const res = await fetch("/api/analyze/bundle", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ url: normalized }),
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: "Unknown error" }));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+        const data = (await res.json()) as BundleAnalysis;
+        if (!controller.signal.aborted) setBundleAnalysis(data);
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setBundleError(err instanceof Error ? err.message : String(err));
+        }
+      } finally {
+        if (!controller.signal.aborted) setBundleLoading(false);
+      }
+    })();
+  }, []);
+
+  const clearBundleAnalysis = useCallback(() => {
+    setBundleAnalysis(null);
+    setBundleLoading(false);
+    setBundleError(null);
+  }, []);
+
+  // ── Next.js Insights ─────────────────────────────────────────
+  const nextJsAbortRef = useRef<AbortController | null>(null);
+
+  const fetchNextJsInsights = useCallback((inputUrl: string) => {
+    if (!inputUrl.trim()) return;
+    if (nextJsAbortRef.current) nextJsAbortRef.current.abort();
+    const controller = new AbortController();
+    nextJsAbortRef.current = controller;
+
+    const normalized = normalizeUrl(inputUrl);
+    setNextJsAnalysis(null);
+    setNextJsLoading(true);
+    setNextJsError(null);
+
+    (async () => {
+      try {
+        const res = await fetch("/api/analyze/nextjs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ url: normalized }),
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: "Unknown error" }));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+        const data = (await res.json()) as NextJsAnalysis;
+        if (!controller.signal.aborted) setNextJsAnalysis(data);
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setNextJsError(err instanceof Error ? err.message : String(err));
+        }
+      } finally {
+        if (!controller.signal.aborted) setNextJsLoading(false);
+      }
+    })();
+  }, []);
+
+  const clearNextJsInsights = useCallback(() => {
+    setNextJsAnalysis(null);
+    setNextJsLoading(false);
+    setNextJsError(null);
+  }, []);
+
+  // ── A/B Comparison ───────────────────────────────────────────
+  const abAbortRef = useRef<AbortController | null>(null);
+
+  const runABComparison = useCallback((urlA: string, urlB: string) => {
+    if (!urlA.trim() || !urlB.trim()) return;
+    if (abAbortRef.current) abAbortRef.current.abort();
+    const controller = new AbortController();
+    abAbortRef.current = controller;
+
+    setAbComparison(null);
+    setAbLoading(true);
+    setAbError(null);
+
+    (async () => {
+      try {
+        const res = await fetch("/api/analyze/ab-compare", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({
+            urlA: normalizeUrl(urlA),
+            urlB: normalizeUrl(urlB),
+            device: selectedDevices[0] || "desktop",
+            throttleProfile,
+          }),
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: "Unknown error" }));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+        const data = (await res.json()) as ABComparisonResult;
+        if (!controller.signal.aborted) setAbComparison(data);
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setAbError(err instanceof Error ? err.message : String(err));
+        }
+      } finally {
+        if (!controller.signal.aborted) setAbLoading(false);
+      }
+    })();
+  }, [selectedDevices, throttleProfile]);
+
+  const clearABComparison = useCallback(() => {
+    setAbComparison(null);
+    setAbLoading(false);
+    setAbError(null);
   }, []);
 
   return (
@@ -268,24 +502,52 @@ export function ScanProvider({ children }: { children: ReactNode }) {
       value={{
         selectedDevices,
         setSelectedDevices,
+        throttleProfile,
+        setThrottleProfile,
+        multiRunCount,
+        setMultiRunCount,
+
         scanAccessibility,
         accessibilityScannedUrl,
         accessibilityData,
         accessibilityLoading,
         accessibilityError,
         clearAccessibility,
+
         scanPerformance,
         performanceScannedUrl,
         performanceData,
         performanceLoading,
         performanceError,
         clearPerformance,
+        multiRunStats,
+        cwvTimeline,
+
         scanSeo,
         seoScannedUrl,
         seoData,
         seoLoading,
         seoError,
         clearSeo,
+        seoDeepAudit,
+
+        fetchBundleAnalysis,
+        bundleAnalysis,
+        bundleLoading,
+        bundleError,
+        clearBundleAnalysis,
+
+        fetchNextJsInsights,
+        nextJsAnalysis,
+        nextJsLoading,
+        nextJsError,
+        clearNextJsInsights,
+
+        runABComparison,
+        abComparison,
+        abLoading,
+        abError,
+        clearABComparison,
       }}
     >
       {children}
