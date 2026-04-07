@@ -13,16 +13,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://scanora.dev";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://auditwave.dev";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Scanora — Website Accessibility, Performance & SEO Audit Tool",
-    template: "%s | Scanora",
+    default: "AuditWave — Website Accessibility, Performance & SEO Audit Tool",
+    template: "%s | AuditWave",
   },
   description:
-    "Free online website audit tool. Scan for WCAG 2.2 accessibility issues, measure Core Web Vitals performance, and analyze SEO — all from one dashboard. Powered by Playwright, axe-core & Lighthouse.",
+    "Free all-in-one website audit tool. WCAG 2.2 accessibility, Core Web Vitals performance, SEO, bundle analysis, Next.js insights, and A/B comparison — powered by Playwright, axe-core & Lighthouse.",
   keywords: [
     "website audit tool",
     "accessibility checker",
@@ -36,10 +36,14 @@ export const metadata: Metadata = {
     "site speed test",
     "multi-device testing",
     "free website checker",
+    "bundle analyzer",
+    "Next.js audit",
+    "A/B performance compare",
+    "technology detection",
   ],
-  authors: [{ name: "Scanora" }],
-  creator: "Scanora",
-  publisher: "Scanora",
+  authors: [{ name: "AuditWave" }],
+  creator: "AuditWave",
+  publisher: "AuditWave",
   robots: {
     index: true,
     follow: true,
@@ -55,24 +59,24 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: siteUrl,
-    siteName: "Scanora",
-    title: "Scanora — Website Accessibility, Performance & SEO Audit Tool",
+    siteName: "AuditWave",
+    title: "AuditWave — Website Accessibility, Performance & SEO Audit Tool",
     description:
-      "Free online website audit tool. Scan for WCAG 2.2 accessibility issues, measure Core Web Vitals, and analyze SEO — all from one dashboard.",
+      "Free all-in-one website audit: accessibility, performance, SEO, bundle analysis, Next.js insights, and A/B comparison from one dashboard.",
     images: [
       {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Scanora — Website Accessibility, Performance & SEO Audit Tool",
+        alt: "AuditWave — Website Accessibility, Performance & SEO Audit Tool",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Scanora — Website Accessibility, Performance & SEO Audit Tool",
+    title: "AuditWave — Website Accessibility, Performance & SEO Audit Tool",
     description:
-      "Free online website audit tool. Scan for WCAG 2.2 accessibility issues, measure Core Web Vitals, and analyze SEO.",
+      "Free all-in-one website audit: accessibility, performance, SEO, bundle analysis, Next.js insights, and A/B comparison.",
   },
   alternates: {
     canonical: siteUrl,

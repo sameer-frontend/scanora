@@ -1,13 +1,16 @@
-# Scanora
+# AuditWave
 
-Free website audit tool. Scan any URL for **WCAG 2.2 accessibility** issues, measure **Core Web Vitals** performance, and analyze **SEO** — all from one dashboard. Powered by Playwright, axe-core & Lighthouse scoring.
+Free all-in-one website audit tool. Scan any URL for **WCAG 2.2 accessibility** issues, measure **Core Web Vitals** performance, analyze **SEO**, inspect **bundles & tech stacks**, get **Next.js insights**, and run **A/B performance comparisons** — all from one dashboard. Powered by Playwright, axe-core & Lighthouse scoring.
 
 ## Features
 
 - **Accessibility Auditor** — WCAG 2.2 AA scanning via axe-core with 4 severity levels (critical → minor), code-level fix suggestions, and WCAG principle breakdown
 - **Performance Optimizer** — Core Web Vitals (LCP, FCP, TBT, CLS, TTFB) using Lighthouse v10 scoring, asset breakdown by category, and optimization opportunities
-- **SEO Auditor** — Meta tags, heading hierarchy, Open Graph & Twitter Card validation, JSON-LD structured data detection, link & image analysis
-- **Multi-Device Testing** — Every audit runs across 4 viewports: Mobile (375×812), Tablet (768×1024), Laptop (1366×768), Desktop (1920×1080)
+- **SEO Analyzer** — Meta tags, heading hierarchy, Open Graph & Twitter Card validation, JSON-LD structured data, keyword density, content analysis, and internal link mapping
+- **Bundle & Tech Analysis** — JavaScript/CSS bundle sizes, code coverage via CDP, unused JS detection, and full technology stack identification with confidence scores
+- **Next.js Insights** — next/image optimization checks, hydration payload analysis, rendering mode detection (SSR/SSG/ISR), and component pattern auditing
+- **A/B Performance Compare** — Side-by-side URL comparison with metric diffs, winner detection, and improvement suggestions
+- **Multi-Device Testing** — Audits run across 4 viewports: Mobile (375×812), Tablet (768×1024), Laptop (1366×768), Desktop (1920×1080)
 - **Screenshots** — Full-page screenshots captured per device during each scan
 - **PDF Export** — Client-side report generation scoped per audit category
 - **100% Free** — No accounts, no paywalls, no tracking cookies
@@ -36,7 +39,7 @@ Free website audit tool. Scan any URL for **WCAG 2.2 accessibility** issues, mea
 
 ```bash
 git clone <repo-url>
-cd scanora
+cd auditwave
 npm install
 ```
 
@@ -59,7 +62,7 @@ npm start
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `NEXT_PUBLIC_SITE_URL` | Site base URL | `https://scanora.dev` |
+| `NEXT_PUBLIC_SITE_URL` | Site base URL | `https://auditwave.dev` |
 
 ## Project Structure
 

@@ -11,6 +11,9 @@ import {
   Gauge,
   Info,
   BookOpen,
+  Package,
+  FlaskConical,
+  GitCompareArrows,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -79,6 +82,42 @@ const tools = [
       { label: "Technical", value: "HTTPS · Favicon · hreflang" },
     ],
   },
+  {
+    icon: Package,
+    name: "Bundle & Tech Detection",
+    description:
+      "Uses Chrome DevTools Protocol (CDP) to collect JavaScript/CSS code coverage and resource transfers. Technology detection uses signature matching against response headers, script content, DOM elements, and meta tags to identify frameworks, CMS, CDNs, analytics, and more.",
+    details: [
+      { label: "Coverage", value: "CDP-based JS/CSS code coverage analysis" },
+      { label: "Resources", value: "Transfer size, MIME type, compression analysis" },
+      { label: "Tech Stack", value: "Framework · CMS · CDN · Analytics · Build tool" },
+      { label: "Output", value: "Unused JS detection, technology confidence scores" },
+    ],
+  },
+  {
+    icon: FlaskConical,
+    name: "Next.js Analyzer",
+    description:
+      "Specialized analysis for Next.js applications. Inspects the rendered DOM and network requests to evaluate next/image usage, hydration payload size, rendering mode (SSR vs SSG vs ISR), and component patterns specific to the Next.js framework.",
+    details: [
+      { label: "Images", value: "next/image vs native <img>, srcSet, lazy loading" },
+      { label: "Hydration", value: "__NEXT_DATA__ payload size analysis" },
+      { label: "Rendering", value: "SSR · SSG · ISR · Client-side detection" },
+      { label: "Patterns", value: "Component patterns, bundle chunk analysis" },
+    ],
+  },
+  {
+    icon: GitCompareArrows,
+    name: "A/B Compare Engine",
+    description:
+      "Launches parallel browser sessions to load two URLs under identical conditions and captures performance metrics for both. Computes metric-by-metric diffs and determines the winner based on overall score and individual Core Web Vitals.",
+    details: [
+      { label: "Metrics", value: "Score · LCP · FCP · CLS · TBT · Total Size" },
+      { label: "Comparison", value: "Diff arrows, percentage change, winner badge" },
+      { label: "Conditions", value: "Identical device profile, network throttle" },
+      { label: "Output", value: "Winner detection, improvement suggestions" },
+    ],
+  },
 ];
 
 const scoring = [
@@ -117,6 +156,30 @@ const scoring = [
     bg: "bg-orange-500/5",
     iconBg: "bg-orange-500/10",
     iconBorder: "border-orange-500/20",
+  },
+  {
+    title: "Bundle & Tech Score",
+    icon: Package,
+    description:
+      "Combines resource efficiency metrics (total transfer size, unused JavaScript ratio) with technology detection completeness.",
+    how: "Transfer sizes are categorized (JS, CSS, images, fonts, other) and scored against efficiency thresholds. Code coverage analysis identifies unused JavaScript as a percentage of total JS. Technologies are identified with confidence scores based on multiple signal matches (headers, DOM, scripts).",
+    color: "text-violet-400",
+    border: "border-violet-500/30",
+    bg: "bg-violet-500/5",
+    iconBg: "bg-violet-500/10",
+    iconBorder: "border-violet-500/20",
+  },
+  {
+    title: "Next.js Insights Score",
+    icon: FlaskConical,
+    description:
+      "Evaluates Next.js-specific best practices including image optimization, hydration efficiency, rendering strategy, and bundle patterns.",
+    how: "Checks for next/image usage vs native img tags, measures __NEXT_DATA__ hydration payload size, verifies rendering mode choices, and audits component patterns. Each insight is classified by severity (critical, warning, info, pass) and category.",
+    color: "text-pink-400",
+    border: "border-pink-500/30",
+    bg: "bg-pink-500/5",
+    iconBg: "bg-pink-500/10",
+    iconBorder: "border-pink-500/20",
   },
 ];
 
@@ -257,7 +320,7 @@ export default function DocsPage() {
             <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/25">
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-white">Scanora</span>
+            <span className="text-lg font-bold text-white">AuditWave</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
@@ -311,7 +374,7 @@ export default function DocsPage() {
             custom={2}
             className="text-4xl font-bold md:text-5xl"
           >
-            How Scanora audits your website
+            How AuditWave audits your website
           </motion.h1>
 
           <motion.p
@@ -359,7 +422,7 @@ export default function DocsPage() {
             Tools &amp; Technologies
           </motion.h2>
           <motion.p variants={fadeUp} custom={1} className="text-slate-400 mb-10 ml-11">
-            The engines that power every Scanora scan
+            The engines that power every AuditWave scan
           </motion.p>
 
           <div className="space-y-6">
@@ -539,7 +602,7 @@ export default function DocsPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500">
                 <Shield className="h-4 w-4 text-white" />
               </div>
-              <span className="font-semibold text-white">Scanora</span>
+              <span className="font-semibold text-white">AuditWave</span>
             </div>
             <div className="flex items-center gap-8 text-sm text-slate-400">
               <Link href="/#features" className="hover:text-white transition-colors">Features</Link>
@@ -549,7 +612,7 @@ export default function DocsPage() {
               <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
             </div>
             <p className="text-sm text-slate-500">
-              © {new Date().getFullYear()} Scanora. All rights reserved.
+              © {new Date().getFullYear()} AuditWave. All rights reserved.
             </p>
           </div>
         </div>

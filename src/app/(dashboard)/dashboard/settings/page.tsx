@@ -59,7 +59,7 @@ export default function SettingsPage() {
   const [history, setHistory] = useState<HistoryEntry[]>(() => {
     if (typeof window === "undefined") return [];
     try {
-      const raw = localStorage.getItem("Scanora-scan-history");
+      const raw = localStorage.getItem("AuditWave-scan-history");
       return raw ? JSON.parse(raw) : [];
     } catch {
       return [];
@@ -68,14 +68,14 @@ export default function SettingsPage() {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const clearHistory = () => {
-    localStorage.removeItem("Scanora-scan-history");
+    localStorage.removeItem("AuditWave-scan-history");
     setHistory([]);
     setExpandedIndex(null);
   };
 
   const removeEntry = (index: number) => {
     const updated = history.filter((_, i) => i !== index);
-    localStorage.setItem("Scanora-scan-history", JSON.stringify(updated));
+    localStorage.setItem("AuditWave-scan-history", JSON.stringify(updated));
     setHistory(updated);
     if (expandedIndex === index) setExpandedIndex(null);
   };

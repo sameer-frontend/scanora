@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     "Compare two URLs head-to-head on performance metrics, Core Web Vitals, and page weight. Find the faster page and spot improvement areas.",
   alternates: { canonical: "/dashboard/ab-compare" },
   openGraph: {
-    title: "A/B Performance Compare — Side-by-Side URL Testing | Scanora",
+    title: "A/B Performance Compare — Side-by-Side URL Testing | AuditWave",
     description:
       "Compare two URLs side-by-side on performance, Core Web Vitals, and page weight.",
     url: "/dashboard/ab-compare",

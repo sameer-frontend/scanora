@@ -3,14 +3,14 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Documentation — API & Audit Guides",
   description:
-    "Learn how Scanora works. Explore guides for accessibility auditing with axe-core, performance measurement with Lighthouse, SEO analysis, and multi-device testing.",
+    "Learn how AuditWave works. Explore guides for accessibility auditing with axe-core, performance measurement with Lighthouse, SEO analysis, and multi-device testing.",
   alternates: {
     canonical: "/docs",
   },
   openGraph: {
-    title: "Scanora Documentation — API & Audit Guides",
+    title: "AuditWave Documentation — API & Audit Guides",
     description:
-      "Guides for accessibility auditing, performance measurement, and SEO analysis with Scanora.",
+      "Guides for accessibility auditing, performance measurement, and SEO analysis with AuditWave.",
     url: "/docs",
   },
 };

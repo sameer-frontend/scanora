@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     "Run a WCAG 2.2 AA accessibility audit on any website. Detect critical issues, get code-level fixes, and test across mobile, tablet, laptop, and desktop viewports using axe-core.",
   alternates: { canonical: "/dashboard/accessibility" },
   openGraph: {
-    title: "Accessibility Audit — WCAG 2.2 Scanner | Scanora",
+    title: "Accessibility Audit — WCAG 2.2 Scanner | AuditWave",
     description:
       "Scan any website for WCAG 2.2 accessibility issues on your selected device. Powered by Playwright and axe-core.",
     url: "/dashboard/accessibility",

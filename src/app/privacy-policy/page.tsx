@@ -6,7 +6,7 @@ import { BackButton } from "@/components/back-button";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "Scanora Privacy Policy — how we handle your data when you use our website audit tool.",
+  description: "AuditWave Privacy Policy — how we handle your data when you use our website audit tool.",
   alternates: { canonical: "/privacy-policy" },
 };
 
@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
             <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/25">
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-white">Scanora</span>
+            <span className="text-lg font-bold text-white">AuditWave</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">1. Introduction</h2>
             <p>
-              Scanora (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates the website audit tool available at scanora.dev (the &quot;Service&quot;). This Privacy Policy explains how we collect, use, and protect information when you use our Service.
+              AuditWave (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates the website audit tool available at auditwave.dev (the &quot;Service&quot;). This Privacy Policy explains how we collect, use, and protect information when you use our Service.
             </p>
           </section>
 
@@ -104,7 +104,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-2">
               <li>To comply with legal obligations or valid legal processes</li>
-              <li>To protect the rights, property, or safety of Scanora, our users, or the public</li>
+              <li>To protect the rights, property, or safety of AuditWave, our users, or the public</li>
               <li>With service providers who assist in operating the Service (e.g., hosting providers), under strict confidentiality agreements</li>
             </ul>
           </section>
@@ -112,7 +112,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">6. Cookies</h2>
             <p>
-              Scanora does not use tracking cookies or third-party analytics cookies. We may use essential cookies strictly necessary for the operation of the Service.
+              AuditWave does not use tracking cookies or third-party analytics cookies. We may use essential cookies strictly necessary for the operation of the Service.
             </p>
           </section>
 
@@ -158,8 +158,8 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-xl font-semibold text-white mb-3">12. Contact Us</h2>
             <p>
               If you have questions about this Privacy Policy, please contact us at{" "}
-              <a href="mailto:privacy@scanora.dev" className="text-emerald-400 hover:underline">
-                privacy@scanora.dev
+              <a href="mailto:privacy@auditwave.dev" className="text-emerald-400 hover:underline">
+                privacy@auditwave.dev
               </a>.
             </p>
           </section>
@@ -174,7 +174,7 @@ export default function PrivacyPolicyPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500">
                 <Shield className="h-4 w-4 text-white" />
               </div>
-              <span className="font-semibold text-white">Scanora</span>
+              <span className="font-semibold text-white">AuditWave</span>
             </div>
             <div className="flex items-center gap-8 text-sm text-slate-400">
               <Link href="/#features" className="hover:text-white transition-colors">Features</Link>
@@ -184,7 +184,7 @@ export default function PrivacyPolicyPage() {
               <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
             </div>
             <p className="text-sm text-slate-500" suppressHydrationWarning>
-              {`© ${new Date().getFullYear()} Scanora. All rights reserved.`}
+              {`© ${new Date().getFullYear()} AuditWave. All rights reserved.`}
             </p>
           </div>
         </div>

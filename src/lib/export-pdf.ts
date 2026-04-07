@@ -276,7 +276,7 @@ export function exportPdfReport({
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.emerald);
-  doc.text("SCANORA", 14, 16);
+  doc.text("AUDITWAVE", 14, 16);
 
   // Scope badge
   const badgeText = scopeLabels[scope].toUpperCase();
@@ -681,7 +681,7 @@ export function exportPdfReport({
     doc.setFontSize(6.5);
     doc.setTextColor(...C.gray);
     doc.setFont("helvetica", "normal");
-    doc.text("Scanora", 14, 288);
+    doc.text("AuditWave", 14, 288);
     doc.text(url, pw / 2, 288, { align: "center" });
     doc.text(`Page ${i} of ${totalPages}`, pw - 14, 288, { align: "right" });
   }
@@ -690,5 +690,5 @@ export function exportPdfReport({
   const hostname = (() => {
     try { return new URL(url).hostname; } catch { return "site"; }
   })();
-  doc.save(`Scanora-${scopeLabels[scope]}-${hostname}-${Date.now()}.pdf`);
+  doc.save(`AuditWave-${scopeLabels[scope]}-${hostname}-${Date.now()}.pdf`);
 }

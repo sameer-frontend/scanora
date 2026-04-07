@@ -19,6 +19,9 @@ import {
   Laptop,
   FileSearch,
   BookOpen,
+  Package,
+  FlaskConical,
+  GitCompareArrows,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -84,14 +87,14 @@ const pillars = [
   },
   {
     icon: FileSearch,
-    title: "SEO Auditor",
+    title: "SEO Analyzer",
     description:
-      "Comprehensive SEO analysis including meta tags, heading hierarchy, Open Graph & Twitter Cards, structured data (JSON-LD), link analysis, and image audits.",
+      "Comprehensive on-page SEO analysis with deep audit: meta tags, heading hierarchy, Open Graph, Twitter Cards, JSON-LD, keyword density, content analysis, and internal link mapping.",
     features: [
-      "Meta Tags & Canonical URL Check",
-      "Open Graph & Twitter Card Validation",
-      "Heading Hierarchy & Content Structure",
+      "Meta Tags & Open Graph Validation",
+      "Heading Hierarchy & Keyword Density",
       "Structured Data (JSON-LD) Detection",
+      "Content Analysis & Internal Link Map",
     ],
     gradient: "from-orange-500 to-amber-400",
     glow: "shadow-orange-500/20",
@@ -99,12 +102,63 @@ const pillars = [
     bg: "bg-orange-500/10",
     border: "border-orange-500/20",
   },
+  {
+    icon: Package,
+    title: "Bundle & Tech Analysis",
+    description:
+      "Analyze JavaScript bundles, CSS resources, and code coverage. Detect the full technology stack — frameworks, CMS, CDN, analytics, and more — with confidence scores.",
+    features: [
+      "JS / CSS Bundle Size Breakdown",
+      "Unused JavaScript Detection",
+      "Technology Stack Identification",
+      "Code Coverage Analysis (CDP)",
+    ],
+    gradient: "from-violet-500 to-purple-400",
+    glow: "shadow-violet-500/20",
+    color: "text-violet-400",
+    bg: "bg-violet-500/10",
+    border: "border-violet-500/20",
+  },
+  {
+    icon: FlaskConical,
+    title: "Next.js Insights",
+    description:
+      "Purpose-built analysis for Next.js applications. Audit next/image usage, hydration payload size, rendering mode, component patterns, and bundle efficiency.",
+    features: [
+      "next/image Optimization Check",
+      "Hydration Payload Analysis",
+      "Rendering Mode Detection (SSR/SSG)",
+      "Component & Bundle Patterns",
+    ],
+    gradient: "from-pink-500 to-rose-400",
+    glow: "shadow-pink-500/20",
+    color: "text-pink-400",
+    bg: "bg-pink-500/10",
+    border: "border-pink-500/20",
+  },
+  {
+    icon: GitCompareArrows,
+    title: "A/B Performance Compare",
+    description:
+      "Compare two URLs head-to-head on performance metrics, Core Web Vitals, and page weight. Instantly see which page is faster with detailed metric diffs.",
+    features: [
+      "Side-by-Side URL Testing",
+      "Core Web Vitals Comparison",
+      "Winner Detection with Score Diff",
+      "Improvement Area Suggestions",
+    ],
+    gradient: "from-sky-500 to-indigo-400",
+    glow: "shadow-sky-500/20",
+    color: "text-sky-400",
+    bg: "bg-sky-500/10",
+    border: "border-sky-500/20",
+  },
 ];
 
 const stats = [
+  { value: "6", label: "Audit Tools" },
   { value: "4", label: "Device Viewports" },
   { value: "WCAG 2.2", label: "Compliance Standard" },
-  { value: "Lighthouse v10", label: "Scoring Engine" },
   { value: "100% Free", label: "No Hidden Costs" },
 ];
 
@@ -130,7 +184,7 @@ export default function LandingPage() {
             <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/25">
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-white">Scanora</span>
+            <span className="text-lg font-bold text-white">AuditWave</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
@@ -175,8 +229,8 @@ export default function LandingPage() {
             custom={1}
             className="mx-auto max-w-5xl text-5xl font-bold leading-tight tracking-tight md:text-7xl md:leading-[1.1]"
           >
-            Accessibility. Performance. SEO.{" "}
-            <span className="gradient-text">One scan.</span>
+            The all-in-one website{" "}
+            <span className="gradient-text">audit platform.</span>
           </motion.h1>
 
           <motion.p
@@ -184,9 +238,9 @@ export default function LandingPage() {
             custom={2}
             className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 md:text-xl"
           >
-            The all-in-one platform that audits your website across 4 device viewports for
-            WCAG 2.2 accessibility, Core Web Vitals performance, and SEO best practices — powered
-            by Playwright, axe-core, and Lighthouse v10. Completely free.
+            Six powerful tools in one free platform: accessibility auditing (WCAG 2.2), performance
+            optimization (Core Web Vitals), SEO analysis, bundle & tech detection, Next.js insights,
+            and A/B performance comparison — powered by Playwright, axe-core, and Lighthouse v10.
           </motion.p>
 
           <motion.div variants={fadeUp} custom={3} className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -206,7 +260,7 @@ export default function LandingPage() {
 
           <motion.div variants={fadeUp} custom={4} className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
             <span className="flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-emerald-500" /> Completely free, no limits
+              <Check className="h-4 w-4 text-emerald-500" /> 6 audit tools, completely free
             </span>
             <span className="flex items-center gap-1.5">
               <Check className="h-4 w-4 text-emerald-500" /> No account required
@@ -238,15 +292,20 @@ export default function LandingPage() {
               </div>
               <div className="mx-auto flex items-center gap-2 rounded-md bg-slate-800/80 px-4 py-1 text-xs text-slate-400">
                 <Lock className="h-3 w-3" />
-                scanora.dev/dashboard
+                auditwave.dev/dashboard
               </div>
             </div>
             {/* Dashboard preview content */}
             <div className="p-6 md:p-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 <ScoreCard label="Accessibility" value="92" color="emerald" />
                 <ScoreCard label="Performance" value="78" color="cyan" />
                 <ScoreCard label="SEO" value="85" color="orange" />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                <ScoreCard label="Bundle & Tech" value="94" color="violet" />
+                <ScoreCard label="Next.js" value="81" color="pink" />
+                <ScoreCard label="A/B Compare" value="—" color="sky" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <DeviceChip icon={Smartphone} label="Mobile" score="76" />
@@ -266,9 +325,9 @@ export default function LandingPage() {
                   <div className="mt-2 text-xs text-slate-500">LCP: 1.8s · FCP: 0.9s · CLS: 0.05</div>
                 </div>
                 <div className="rounded-lg border border-slate-800 bg-slate-800/30 p-4">
-                  <div className="text-xs text-slate-400 mb-2">SEO Checks</div>
-                  <div className="text-2xl font-bold text-orange-400">14/16</div>
-                  <div className="mt-2 text-xs text-slate-500">Meta tags · Headings · Structured data</div>
+                  <div className="text-xs text-slate-400 mb-2">Technologies</div>
+                  <div className="text-2xl font-bold text-violet-400">12</div>
+                  <div className="mt-2 text-xs text-slate-500">React · Next.js · Tailwind · Vercel</div>
                 </div>
               </div>
             </div>
@@ -308,19 +367,20 @@ export default function LandingPage() {
           <motion.div variants={fadeUp} custom={0}>
             <Badge variant="secondary" className="mb-4">
               <Globe className="mr-1.5 h-3.5 w-3.5" />
-              Three Pillars, One Platform
+              Six Tools, One Platform
             </Badge>
           </motion.div>
           <motion.h2 variants={fadeUp} custom={1} className="text-4xl font-bold md:text-5xl">
             Everything your website needs
           </motion.h2>
           <motion.p variants={fadeUp} custom={2} className="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
-            Stop juggling multiple tools. Scanora combines accessibility auditing,
-            performance optimization, and SEO analysis in one free platform.
+            Stop juggling multiple tools. AuditWave combines accessibility auditing,
+            performance optimization, SEO analysis, bundle inspection, Next.js insights,
+            and A/B comparison in one free platform.
           </motion.p>
         </motion.div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           {pillars.map((pillar, i) => (
             <motion.div
               key={pillar.title}
@@ -382,7 +442,7 @@ export default function LandingPage() {
               step: "01",
               title: "Enter Your URL",
               description:
-                "Paste any website URL and select which devices to test (Mobile, Tablet, Laptop, Desktop). Scanora runs a deep single-page scan across all chosen viewports.",
+                "Paste any website URL and choose your audit — accessibility, performance, SEO, bundle analysis, Next.js insights, or A/B comparison. AuditWave runs a deep scan using real browsers.",
               icon: Search,
             },
             {
@@ -454,7 +514,7 @@ export default function LandingPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-emerald-500 to-cyan-500">
                 <Shield className="h-4 w-4 text-white" />
               </div>
-              <span className="font-semibold text-white">Scanora</span>
+              <span className="font-semibold text-white">AuditWave</span>
             </div>
             <div className="flex items-center gap-8 text-sm text-slate-400">
               <a href="#features" className="hover:text-white transition-colors">Features</a>
@@ -464,7 +524,7 @@ export default function LandingPage() {
               <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
             </div>
             <p className="text-sm text-slate-500" suppressHydrationWarning>
-              {`© ${new Date().getFullYear()} Scanora. All rights reserved.`}
+              {`© ${new Date().getFullYear()} AuditWave. All rights reserved.`}
             </p>
           </div>
         </div>
@@ -480,6 +540,8 @@ function ScoreCard({ label, value, color }: { label: string; value: string; colo
     cyan: "text-cyan-400",
     orange: "text-orange-400",
     violet: "text-violet-400",
+    pink: "text-pink-400",
+    sky: "text-sky-400",
   };
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-800/30 p-4">

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     "Analyze Next.js-specific optimizations: next/image usage, hydration payload size, rendering mode, component patterns, and bundle efficiency.",
   alternates: { canonical: "/dashboard/nextjs" },
   openGraph: {
-    title: "Next.js Insights — Image, Hydration & Bundle Analysis | Scanora",
+    title: "Next.js Insights — Image, Hydration & Bundle Analysis | AuditWave",
     description:
       "Detect Next.js optimization opportunities for images, hydration, rendering, and bundle size.",
     url: "/dashboard/nextjs",

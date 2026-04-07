@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-export const alt = "Scanora — Accessibility, Performance & SEO Auditor";
+export const alt = "AuditWave — Accessibility, Performance & SEO Auditor";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -76,7 +76,7 @@ export default function OgImage() {
             </svg>
           </div>
           <span style={{ fontSize: "56px", fontWeight: 800, color: "white", letterSpacing: "-1px" }}>
-            Scanora
+            AuditWave
           </span>
         </div>
 

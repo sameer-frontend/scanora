@@ -88,7 +88,7 @@ export default function DashboardSidebar() {
               exit={{ opacity: 0, x: -10 }}
               className="text-lg font-bold text-white whitespace-nowrap"
             >
-              Scanora
+              AuditWave
             </motion.span>
           )}
         </AnimatePresence>
@@ -161,7 +161,7 @@ export default function DashboardSidebar() {
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-emerald-500 to-cyan-500">
           <Shield className="h-4 w-4 text-white" />
         </div>
-        <span className="text-base font-bold text-white">Scanora</span>
+        <span className="text-base font-bold text-white">AuditWave</span>
       </div>
 
       {/* Mobile drawer overlay */}
