@@ -504,8 +504,9 @@ function analyzeSeo(raw: RawSeoData, pageUrl: string): SeoData {
 async function scanDevice(
   browser: Awaited<ReturnType<typeof launchBrowser>>,
   device: DeviceProfile,
-  targetUrl: string
-): Promise<DeviceSeoResult> {
+  targetUrl: string,
+  wantDeepAudit: boolean
+): Promise<{ result: DeviceSeoResult; deepAudit?: SeoDeepAudit }> {
   const context = await browser.newContext(getStealthContextOptions(device));
   try {
     const page = await context.newPage();
@@ -523,10 +524,35 @@ async function scanDevice(
 
     const raw: RawSeoData = await page.evaluate(extractSeoData, targetUrl);
 
-    const screenshotBuf = await page.screenshot({ fullPage: true, type: "jpeg", quality: 70 });
-    const screenshot = `data:image/jpeg;base64,${screenshotBuf.toString("base64")}`;
+    // Extract deep audit data from the same page (avoids a second navigation)
+    let deepAudit: SeoDeepAudit | undefined;
+    if (wantDeepAudit) {
+      const rawDeep: RawDeepAuditData = await page.evaluate(extractDeepAuditData, targetUrl);
+      deepAudit = analyzeDeepAudit(rawDeep, targetUrl);
+    }
 
-    return { device, screenshot, data: analyzeSeo(raw, targetUrl) };
+    // Cap screenshot height to prevent OOM in serverless single-process Chromium
+    const bodyHeight = await page.evaluate(() => document.body?.scrollHeight ?? 0);
+    const maxHeight = Math.min(Math.max(bodyHeight, device.height), 4000);
+    let screenshot: string;
+    try {
+      const screenshotBuf = await page.screenshot({
+        fullPage: false,
+        clip: { x: 0, y: 0, width: device.width, height: maxHeight },
+        type: "jpeg",
+        quality: 70,
+      });
+      screenshot = `data:image/jpeg;base64,${screenshotBuf.toString("base64")}`;
+    } catch {
+      // Fallback to viewport-only screenshot if clip fails
+      const screenshotBuf = await page.screenshot({ type: "jpeg", quality: 60 });
+      screenshot = `data:image/jpeg;base64,${screenshotBuf.toString("base64")}`;
+    }
+
+    return {
+      result: { device, screenshot, data: analyzeSeo(raw, targetUrl) },
+      deepAudit,
+    };
   } finally {
     await context.close();
   }
@@ -705,38 +731,6 @@ function analyzeDeepAudit(raw: RawDeepAuditData, pageUrl: string): SeoDeepAudit 
   };
 }
 
-async function scanDeviceDeepAudit(
-  browser: Awaited<ReturnType<typeof launchBrowser>>,
-  targetUrl: string
-): Promise<SeoDeepAudit> {
-  const desktopDevice = DEVICE_PROFILES.find((d) => d.type === "desktop")!;
-  const context = await browser.newContext(getStealthContextOptions(desktopDevice));
-  try {
-    const page = await context.newPage();
-    await applyStealthScripts(page);
-
-    const nav = await stealthGoto(page, targetUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
-    if (!nav.success) {
-      return {
-        structuredDataValidation: [],
-        internalLinks: [],
-        keywords: [],
-        brokenLinks: [],
-        contentStats: { wordCount: 0, readingTime: 0, paragraphCount: 0, avgSentenceLength: 0 },
-      };
-    }
-
-    await page.waitForTimeout(500);
-    const rawDeep: RawDeepAuditData = await page.evaluate(extractDeepAuditData, targetUrl);
-
-    return analyzeDeepAudit(rawDeep, targetUrl);
-  } finally {
-    await context.close();
-  }
-}
-
-
-
 // ── POST handler ──────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -768,20 +762,13 @@ export async function POST(req: NextRequest) {
     browser = await launchBrowser();
     const targetUrl = parsedUrl.toString();
 
-    const results = await Promise.all(
-      [desktopDevice].map((device) => scanDevice(browser!, device, targetUrl))
-    );
-
-    let deepAudit: SeoDeepAudit | undefined;
-    if (wantDeepAudit) {
-      deepAudit = await scanDeviceDeepAudit(browser, targetUrl);
-    }
+    const { result, deepAudit } = await scanDevice(browser, desktopDevice, targetUrl, !!wantDeepAudit);
 
     await browser.close();
     browser = null;
 
     return NextResponse.json(
-      { results, deepAudit },
+      { results: [result], deepAudit },
       { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } },
     );
   } catch (err) {

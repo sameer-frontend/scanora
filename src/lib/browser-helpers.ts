@@ -30,7 +30,12 @@ export async function launchBrowser(): Promise<Browser> {
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
     const sparticuzChromium = (await import("@sparticuz/chromium-min")).default;
     return chromium.launch({
-      args: [...sparticuzChromium.args, ...getStealthArgs()],
+      args: [
+        ...sparticuzChromium.args,
+        ...getStealthArgs(),
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+      ],
       executablePath: await sparticuzChromium.executablePath(
         "https://github.com/Sparticuz/chromium/releases/download/v143.0.4/chromium-v143.0.4-pack.x64.tar"
       ),
