@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "SEO Audit — On-Page SEO Analyzer",
   description:
-    "Analyze on-page SEO: meta tags, heading structure, Open Graph, Twitter cards, structured data, canonical URLs, images, and internal/external links across multiple devices.",
+    "Analyze on-page SEO: meta tags, heading structure, Open Graph, Twitter cards, structured data, canonical URLs, images, and internal/external links on your selected device.",
   alternates: { canonical: "/dashboard/seo" },
   openGraph: {
     title: "SEO Audit — On-Page SEO Analyzer | Scanora",

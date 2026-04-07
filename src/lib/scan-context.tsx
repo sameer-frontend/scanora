@@ -16,25 +16,29 @@ import type {
 } from "@/lib/types";
 
 interface ScanContextType {
-  url: string;
-  setUrl: (url: string) => void;
-  scannedUrl: string;
   selectedDevices: DeviceType[];
   setSelectedDevices: (d: DeviceType[]) => void;
 
   scanAccessibility: (inputUrl: string) => void;
-  scanPerformance: (inputUrl: string) => void;
-  scanSeo: (inputUrl: string) => void;
-
+  accessibilityScannedUrl: string;
   accessibilityData: DeviceAccessibilityResult[] | null;
   accessibilityLoading: boolean;
   accessibilityError: string | null;
+  clearAccessibility: () => void;
+
+  scanPerformance: (inputUrl: string) => void;
+  performanceScannedUrl: string;
   performanceData: DevicePerformanceResult[] | null;
   performanceLoading: boolean;
   performanceError: string | null;
+  clearPerformance: () => void;
+
+  scanSeo: (inputUrl: string) => void;
+  seoScannedUrl: string;
   seoData: DeviceSeoResult[] | null;
   seoLoading: boolean;
   seoError: string | null;
+  clearSeo: () => void;
 }
 
 const ScanContext = createContext<ScanContextType | null>(null);
@@ -44,18 +48,19 @@ function normalizeUrl(input: string) {
 }
 
 export function ScanProvider({ children }: { children: ReactNode }) {
-  const [url, setUrl] = useState("");
-  const [scannedUrl, setScannedUrl] = useState("");
   const [selectedDevices, setSelectedDevices] = useState<DeviceType[]>(["desktop"]);
 
+  const [accessibilityScannedUrl, setAccessibilityScannedUrl] = useState("");
   const [accessibilityData, setAccessibilityData] = useState<DeviceAccessibilityResult[] | null>(null);
   const [accessibilityLoading, setAccessibilityLoading] = useState(false);
   const [accessibilityError, setAccessibilityError] = useState<string | null>(null);
 
+  const [performanceScannedUrl, setPerformanceScannedUrl] = useState("");
   const [performanceData, setPerformanceData] = useState<DevicePerformanceResult[] | null>(null);
   const [performanceLoading, setPerformanceLoading] = useState(false);
   const [performanceError, setPerformanceError] = useState<string | null>(null);
 
+  const [seoScannedUrl, setSeoScannedUrl] = useState("");
   const [seoData, setSeoData] = useState<DeviceSeoResult[] | null>(null);
   const [seoLoading, setSeoLoading] = useState(false);
   const [seoError, setSeoError] = useState<string | null>(null);
@@ -116,8 +121,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
       a11yAbortRef.current = controller;
 
       const normalized = normalizeUrl(inputUrl);
-      setUrl(normalized);
-      setScannedUrl(normalized);
+      setAccessibilityScannedUrl(normalized);
       setAccessibilityData(null);
       setAccessibilityLoading(true);
       setAccessibilityError(null);
@@ -160,8 +164,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
       perfAbortRef.current = controller;
 
       const normalized = normalizeUrl(inputUrl);
-      setUrl(normalized);
-      setScannedUrl(normalized);
+      setPerformanceScannedUrl(normalized);
       setPerformanceData(null);
       setPerformanceLoading(true);
       setPerformanceError(null);
@@ -204,8 +207,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
       seoAbortRef.current = controller;
 
       const normalized = normalizeUrl(inputUrl);
-      setUrl(normalized);
-      setScannedUrl(normalized);
+      setSeoScannedUrl(normalized);
       setSeoData(null);
       setSeoLoading(true);
       setSeoError(null);
@@ -216,7 +218,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             cache: "no-store",
-            body: JSON.stringify({ url: normalized, devices: selectedDevices }),
+            body: JSON.stringify({ url: normalized }),
             signal: controller.signal,
           });
           if (!res.ok) {
@@ -240,26 +242,50 @@ export function ScanProvider({ children }: { children: ReactNode }) {
     [selectedDevices, persistResult],
   );
 
+  const clearAccessibility = useCallback(() => {
+    setAccessibilityScannedUrl("");
+    setAccessibilityData(null);
+    setAccessibilityLoading(false);
+    setAccessibilityError(null);
+  }, []);
+
+  const clearPerformance = useCallback(() => {
+    setPerformanceScannedUrl("");
+    setPerformanceData(null);
+    setPerformanceLoading(false);
+    setPerformanceError(null);
+  }, []);
+
+  const clearSeo = useCallback(() => {
+    setSeoScannedUrl("");
+    setSeoData(null);
+    setSeoLoading(false);
+    setSeoError(null);
+  }, []);
+
   return (
     <ScanContext.Provider
       value={{
-        url,
-        setUrl,
-        scannedUrl,
         selectedDevices,
         setSelectedDevices,
         scanAccessibility,
-        scanPerformance,
-        scanSeo,
+        accessibilityScannedUrl,
         accessibilityData,
         accessibilityLoading,
         accessibilityError,
+        clearAccessibility,
+        scanPerformance,
+        performanceScannedUrl,
         performanceData,
         performanceLoading,
         performanceError,
+        clearPerformance,
+        scanSeo,
+        seoScannedUrl,
         seoData,
         seoLoading,
         seoError,
+        clearSeo,
       }}
     >
       {children}

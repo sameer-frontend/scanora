@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
+  RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -57,10 +58,11 @@ export default function PerformancePage() {
     performanceData: results,
     performanceLoading: loading,
     performanceError: error,
+    performanceScannedUrl: scannedUrl,
     scanPerformance,
     accessibilityData,
     seoData,
-    scannedUrl,
+    clearPerformance,
   } = useScan();
 
   const [activeDevice, setActiveDevice] = useState<DeviceType | null>(null);
@@ -81,6 +83,7 @@ export default function PerformancePage() {
         icon={Zap}
         title="Performance Audit"
         description="Enter a URL and select a device to run a Lighthouse-powered performance audit with Core Web Vitals."
+        scannedUrl={scannedUrl}
       />
     );
   }
@@ -91,7 +94,7 @@ export default function PerformancePage() {
       <ScanLoadingState
         accentColor="cyan"
         title="Measuring Performance…"
-        description="Playwright is loading the page on multiple devices and collecting real performance metrics."
+        description="Playwright is loading the page on your selected device and collecting real performance metrics."
       />
     );
   }
@@ -124,17 +127,20 @@ export default function PerformancePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 border border-cyan-500/20">
             <Zap className="h-5 w-5 text-cyan-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Performance Optimizer</h1>
-            <p className="text-slate-400 text-sm">Real metrics via Playwright · Multi-device · Core Web Vitals</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">Performance Optimizer</h1>
+            <p className="text-slate-400 text-xs sm:text-sm">Real metrics via Playwright · Multi-device · Core Web Vitals</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={clearPerformance}>
+            <RotateCcw className="h-4 w-4 mr-1" /> Try New Scan
+          </Button>
           <Button variant="outline" size="sm" onClick={() => {
             import("@/lib/export-pdf").then(({ exportPdfReport }) =>
               exportPdfReport({ url: scannedUrl, scope: "performance", accessibilityData, performanceData: results, seoData })
@@ -214,7 +220,7 @@ export default function PerformancePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "TTFB", value: `${data.metrics.ttfb}ms`, sub: "Time to First Byte" },
             { label: "DOM Ready", value: `${data.metrics.domContentLoaded}ms`, sub: "DOM Content Loaded" },

@@ -538,7 +538,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { url, devices } = body as { url?: unknown; devices?: unknown };
+  const { url } = body as { url?: unknown };
 
   if (!url || typeof url !== "string") {
     return NextResponse.json({ error: "URL is required" }, { status: 400 });
@@ -551,14 +551,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
   }
 
-  const selectedDevices: DeviceProfile[] =
-    Array.isArray(devices) && devices.length > 0
-      ? DEVICE_PROFILES.filter((d) => (devices as string[]).includes(d.type))
-      : DEVICE_PROFILES;
-
-  if (selectedDevices.length === 0) {
-    return NextResponse.json({ error: "No valid devices specified" }, { status: 400 });
-  }
+  // SEO analysis always uses desktop viewport
+  const desktopDevice = DEVICE_PROFILES.find((d) => d.type === "desktop")!;
 
   let browser: Awaited<ReturnType<typeof launchBrowser>> | null = null;
   try {
@@ -566,7 +560,7 @@ export async function POST(req: NextRequest) {
     const targetUrl = parsedUrl.toString();
 
     const results = await Promise.all(
-      selectedDevices.map((device) => scanDevice(browser!, device, targetUrl))
+      [desktopDevice].map((device) => scanDevice(browser!, device, targetUrl))
     );
 
     await browser.close();

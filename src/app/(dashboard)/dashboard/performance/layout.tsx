@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Performance Audit — Core Web Vitals & Lighthouse | Scanora",
     description:
-      "Measure real Core Web Vitals and get Lighthouse v10 scoring for any website across multiple devices.",
+      "Measure real Core Web Vitals and get Lighthouse v10 scoring for any website on your selected device.",
     url: "/dashboard/performance",
   },
 };

@@ -16,7 +16,7 @@ interface ScanEmptyStateProps {
 export function ScanEmptyState({ icon: Icon, accentColor, description, children }: ScanEmptyStateProps) {
   const styles = accentStyles[accentColor];
   return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+    <div className="flex flex-col items-center justify-center min-h-[40vh] sm:min-h-[50vh] md:h-[60vh] text-center px-4">
       <div className={cn("flex h-16 w-16 items-center justify-center rounded-2xl border mb-4", styles.bg, styles.border)}>
         <Icon className={cn("h-8 w-8", styles.text)} />
       </div>
@@ -37,7 +37,7 @@ interface ScanLoadingStateProps {
 export function ScanLoadingState({ accentColor, title, description, children }: ScanLoadingStateProps) {
   const styles = accentStyles[accentColor];
   return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+    <div className="flex flex-col items-center justify-center min-h-[40vh] sm:min-h-[50vh] md:h-[60vh] text-center px-4">
       <div className="relative mb-6">
         <div className={cn("absolute inset-0 rounded-full animate-ping", styles.pingBg)} />
         <div className={cn("relative flex h-16 w-16 items-center justify-center rounded-full border", styles.bg, styles.border)}>
@@ -63,7 +63,7 @@ export function ScanErrorState({ error, onRetry, onNewUrl }: ScanErrorStateProps
   const [url, setUrl] = useState("");
 
   return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+    <div className="flex flex-col items-center justify-center min-h-[40vh] sm:min-h-[50vh] md:h-[60vh] text-center px-4">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 mb-4">
         <SearchX className="h-8 w-8 text-red-400" />
       </div>

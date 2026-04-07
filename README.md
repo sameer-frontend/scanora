@@ -1,6 +1,6 @@
 # Scanora
 
-Free, open-source website audit tool. Scan any URL for **WCAG 2.2 accessibility** issues, measure **Core Web Vitals** performance, and analyze **SEO** — all from one dashboard. Powered by Playwright, axe-core & Lighthouse scoring.
+Free website audit tool. Scan any URL for **WCAG 2.2 accessibility** issues, measure **Core Web Vitals** performance, and analyze **SEO** — all from one dashboard. Powered by Playwright, axe-core & Lighthouse scoring.
 
 ## Features
 
@@ -125,10 +125,10 @@ All routes accept `POST` with `{ url: string }` and scan across 4 device viewpor
 
 Deploy to Vercel with zero configuration:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/sameer-frontend/scanora)
+
 
 The `vercel.json` configures serverless functions with 2048 MB memory and 300s max duration for browser automation.
 
 ## License
 
-Free & open source.
+All rights reserved.

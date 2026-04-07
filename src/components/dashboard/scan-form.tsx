@@ -32,10 +32,12 @@ interface ScanFormProps {
   icon: LucideIcon;
   title: string;
   description: string;
+  scannedUrl?: string;
+  hideDevicePicker?: boolean;
 }
 
-export function ScanForm({ onScan, scanning, accentColor, icon: Icon, title, description }: ScanFormProps) {
-  const { scannedUrl, selectedDevices, setSelectedDevices } = useScan();
+export function ScanForm({ onScan, scanning, accentColor, icon: Icon, title, description, scannedUrl, hideDevicePicker }: ScanFormProps) {
+  const { selectedDevices, setSelectedDevices } = useScan();
   const [url, setUrl] = useState(scannedUrl || "");
   const styles = accentStyles[accentColor];
 
@@ -46,12 +48,12 @@ export function ScanForm({ onScan, scanning, accentColor, icon: Icon, title, des
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-      <div className={cn("flex h-16 w-16 items-center justify-center rounded-2xl border mb-4", styles.bg, styles.border)}>
-        <Icon className={cn("h-8 w-8", styles.text)} />
+    <div className="flex flex-col items-center justify-center min-h-[40vh] sm:min-h-[50vh] md:h-[60vh] text-center px-4">
+      <div className={cn("flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl border mb-4", styles.bg, styles.border)}>
+        <Icon className={cn("h-7 w-7 sm:h-8 sm:w-8", styles.text)} />
       </div>
-      <h2 className="text-xl font-bold text-white mb-2">{title}</h2>
-      <p className="text-slate-400 text-sm max-w-md mb-8">{description}</p>
+      <h2 className="text-lg sm:text-xl font-bold text-white mb-2">{title}</h2>
+      <p className="text-slate-400 text-sm max-w-md mb-6 sm:mb-8">{description}</p>
 
       <div className="w-full max-w-lg space-y-4">
         {/* URL Input */}
@@ -71,28 +73,30 @@ export function ScanForm({ onScan, scanning, accentColor, icon: Icon, title, des
         </div>
 
         {/* Device Picker */}
-        <div className="grid grid-cols-4 gap-2">
-          {deviceOptions.map(({ type, label, icon: DeviceIcon, desc }) => {
-            const active = selectedDevices.includes(type);
-            return (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setSelectedDevices([type])}
-                className={cn(
-                  "flex flex-col items-center gap-1 rounded-lg border p-3 transition-all text-xs",
-                  active
-                    ? cn(styles.bg, styles.border, styles.text)
-                    : "border-slate-800 bg-slate-900/50 text-white hover:bg-slate-800/50",
-                )}
-              >
-                <DeviceIcon className={cn("h-4 w-4", active ? styles.text : "text-white")} />
-                <span className="font-medium">{label}</span>
-                <span className="text-[10px] text-white">{desc}</span>
-              </button>
-            );
-          })}
-        </div>
+        {!hideDevicePicker && (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {deviceOptions.map(({ type, label, icon: DeviceIcon, desc }) => {
+              const active = selectedDevices.includes(type);
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setSelectedDevices([type])}
+                  className={cn(
+                    "flex flex-col items-center gap-1 rounded-lg border p-3 transition-all text-xs",
+                    active
+                      ? cn(styles.bg, styles.border, styles.text)
+                      : "border-slate-800 bg-slate-900/50 text-white hover:bg-slate-800/50",
+                  )}
+                >
+                  <DeviceIcon className={cn("h-4 w-4", active ? styles.text : "text-white")} />
+                  <span className="font-medium">{label}</span>
+                  <span className="text-[10px] text-white">{desc}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Scan Button */}
         <Button

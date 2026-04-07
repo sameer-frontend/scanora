@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Tag,
   Smartphone,
+  RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,13 +26,11 @@ import { Button } from "@/components/ui/button";
 import { ScanLoadingState, ScanErrorState } from "@/components/dashboard/scan-states";
 import { ScanForm } from "@/components/dashboard/scan-form";
 import { useScan } from "@/lib/scan-context";
-import type { DeviceType, DeviceSeoResult, SeoData } from "@/lib/types";
+import type { DeviceSeoResult, SeoData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const ScoreRing = lazy(() => import("@/components/dashboard/score-ring").then(m => ({ default: m.ScoreRing })));
-const DeviceTabs = lazy(() => import("@/components/dashboard/device-tabs").then(m => ({ default: m.DeviceTabs })));
 const ScreenshotCard = lazy(() => import("@/components/dashboard/screenshot-card").then(m => ({ default: m.ScreenshotCard })));
-const CrossDeviceComparison = lazy(() => import("@/components/dashboard/cross-device-comparison").then(m => ({ default: m.CrossDeviceComparison })));
 
 function LazyFallback() {
   return <div className="h-32 animate-pulse rounded-xl bg-slate-800/40" />;
@@ -249,9 +248,9 @@ function PageSeoSections({
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg bg-slate-800/30 p-3 text-center">
-                <div className="text-2xl font-bold text-white">{pageData.images.total}</div>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="rounded-lg bg-slate-800/30 p-2 sm:p-3 text-center">
+                <div className="text-xl sm:text-2xl font-bold text-white">{pageData.images.total}</div>
                 <div className="text-[10px] text-slate-500">Total</div>
               </div>
               <div className="rounded-lg bg-slate-800/30 p-3 text-center">
@@ -463,18 +462,16 @@ export default function SeoPage() {
     seoData: results,
     seoLoading: loading,
     seoError: error,
+    seoScannedUrl: scannedUrl,
     scanSeo,
     accessibilityData,
     performanceData,
-    scannedUrl,
+    clearSeo,
   } = useScan();
 
-  const [activeDevice, setActiveDevice] = useState<DeviceType | null>(null);
   const [screenshotOpen, setScreenshotOpen] = useState(false);
 
-  const currentDevice = activeDevice ?? results?.[0]?.device.type ?? null;
-  const activeResult: DeviceSeoResult | undefined =
-    results?.find((r) => r.device.type === currentDevice);
+  const activeResult: DeviceSeoResult | undefined = results?.[0];
 
   // Empty state
   if (!results && !loading && !error) {
@@ -485,7 +482,9 @@ export default function SeoPage() {
         accentColor="orange"
         icon={Search}
         title="SEO Audit"
-        description="Enter a URL and select a device to run a comprehensive SEO analysis including meta tags, headings, Open Graph, and structured data."
+        description="Enter a URL to run a comprehensive SEO analysis including meta tags, headings, Open Graph, and structured data."
+        scannedUrl={scannedUrl}
+        hideDevicePicker
       />
     );
   }
@@ -525,35 +524,29 @@ export default function SeoPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 border border-orange-500/20">
             <Search className="h-5 w-5 text-orange-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">SEO Analyzer</h1>
-            <p className="text-white text-sm">Meta &#183; Headings &#183; Open Graph &#183; Structured Data &#183; Links &#183; Images</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">SEO Analyzer</h1>
+            <p className="text-white text-xs sm:text-sm">Meta &#183; Headings &#183; Open Graph &#183; Structured Data &#183; Links &#183; Images</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => {
-          import("@/lib/export-pdf").then(({ exportPdfReport }) =>
-            exportPdfReport({ url: scannedUrl, scope: "seo", accessibilityData, performanceData, seoData: results })
-          );
-        }}>
-          <Download className="h-4 w-4 mr-1" /> Export PDF
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button variant="outline" size="sm" onClick={clearSeo}>
+            <RotateCcw className="h-4 w-4 mr-1" /> Try New Scan
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            import("@/lib/export-pdf").then(({ exportPdfReport }) =>
+              exportPdfReport({ url: scannedUrl, scope: "seo", accessibilityData, performanceData, seoData: results })
+            );
+          }}>
+            <Download className="h-4 w-4 mr-1" /> Export PDF
+          </Button>
+        </div>
       </div>
-
-      {/* Device Tabs */}
-      <Suspense fallback={<LazyFallback />}>
-        <DeviceTabs
-          results={results}
-          currentDevice={currentDevice}
-          onDeviceChange={setActiveDevice}
-          accentColor="orange"
-          scoreThreshold={80}
-        />
-      </Suspense>
 
       {/* Score + Screenshot + Key Info */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
@@ -662,7 +655,7 @@ export default function SeoPage() {
 
       {/* Quick Stats Row */}
       <div>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
           {[
             { label: "Headings", value: data.headings.headings.length.toString(), icon: Heading1, ok: data.headings.hasH1 && data.headings.hierarchyValid },
             { label: "Links", value: `${data.links.internal + data.links.external}`, icon: Link2, ok: data.links.issues.length === 0 },
@@ -696,33 +689,6 @@ export default function SeoPage() {
         />
       </div>
 
-      {/* Cross-device Comparison */}
-      {results.length > 1 && (
-        <Suspense fallback={<LazyFallback />}>
-          <CrossDeviceComparison
-            results={results}
-            currentDevice={currentDevice}
-            onDeviceChange={setActiveDevice}
-            accentColor="orange"
-            scoreThreshold={80}
-            renderDetails={(r) => {
-              const d = r as DeviceSeoResult;
-              return (
-                <div className="mt-2 space-y-0.5 text-[10px]">
-                  <div className="flex justify-between text-white">
-                    <span>Issues</span>
-                    <span className="text-slate-300">{d.data.issues.filter((i) => i.severity !== "pass").length}</span>
-                  </div>
-                  <div className="flex justify-between text-white">
-                    <span>Passed</span>
-                    <span className="text-emerald-400">{d.data.issues.filter((i) => i.severity === "pass").length}</span>
-                  </div>
-                </div>
-              );
-            }}
-          />
-        </Suspense>
-      )}
     </div>
   );
 }

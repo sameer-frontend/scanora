@@ -104,14 +104,14 @@ export default function ReportsPage() {
   return (
     <motion.div initial="hidden" animate="visible" className="space-y-6">
       {/* Header */}
-      <motion.div variants={fadeUp} custom={0} className="flex items-center justify-between">
+      <motion.div variants={fadeUp} custom={0} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-500/10 border border-slate-500/20">
             <FileText className="h-5 w-5 text-slate-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Reports</h1>
-            <p className="text-slate-400 text-sm">View and export your audit reports</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">Reports</h1>
+            <p className="text-slate-400 text-xs sm:text-sm">View and export your audit reports</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -126,7 +126,7 @@ export default function ReportsPage() {
 
       {/* Summary */}
       <motion.div variants={fadeUp} custom={1}>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-white">24</div>
