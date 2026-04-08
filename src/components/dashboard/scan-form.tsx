@@ -47,6 +47,8 @@ export function ScanForm({ onScan, scanning, accentColor, icon: Icon, title, des
     selectedDevices, setSelectedDevices,
     throttleProfile, setThrottleProfile,
     multiRunCount, setMultiRunCount,
+    isAnyAuditRunning,
+    getCurrentRunningAudit,
   } = useScan();
   const [url, setUrl] = useState(scannedUrl || "");
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -182,7 +184,7 @@ export function ScanForm({ onScan, scanning, accentColor, icon: Icon, title, des
         {/* Scan Button */}
         <Button
           onClick={handleSubmit}
-          disabled={!url.trim() || scanning}
+          disabled={!url.trim() || scanning || isAnyAuditRunning}
           className="w-full h-11 text-sm font-semibold"
           size="lg"
         >
@@ -191,6 +193,11 @@ export function ScanForm({ onScan, scanning, accentColor, icon: Icon, title, des
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Scanning…
             </>
+          ) : isAnyAuditRunning ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Another Audit Running…
+            </>
           ) : (
             <>
               <ScanSearch className="h-4 w-4 mr-2" />
@@ -198,6 +205,18 @@ export function ScanForm({ onScan, scanning, accentColor, icon: Icon, title, des
             </>
           )}
         </Button>
+
+        {/* Message when another audit is running */}
+        {isAnyAuditRunning && !scanning && getCurrentRunningAudit() && (
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-center">
+            <p className="text-xs text-amber-200">
+              <strong>{getCurrentRunningAudit()}</strong> audit is currently running.
+            </p>
+            <p className="text-xs text-amber-300 mt-1">
+              Please wait for it to complete before starting a new audit.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

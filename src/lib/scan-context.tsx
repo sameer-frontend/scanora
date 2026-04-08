@@ -80,6 +80,10 @@ interface ScanContextType {
   abLoading: boolean;
   abError: string | null;
   clearABComparison: () => void;
+
+  // Computed
+  isAnyAuditRunning: boolean;
+  getCurrentRunningAudit: () => string | null;
 }
 
 const ScanContext = createContext<ScanContextType | null>(null);
@@ -497,6 +501,20 @@ export function ScanProvider({ children }: { children: ReactNode }) {
     setAbError(null);
   }, []);
 
+  // Computed: Check if any audit is running
+  const isAnyAuditRunning = accessibilityLoading || performanceLoading || seoLoading || bundleLoading || nextJsLoading || abLoading;
+
+  // Computed: Get the currently running audit name
+  const getCurrentRunningAudit = () => {
+    if (accessibilityLoading) return "Accessibility";
+    if (performanceLoading) return "Performance";
+    if (seoLoading) return "SEO";
+    if (bundleLoading) return "Bundle & Tech Analysis";
+    if (nextJsLoading) return "Next.js Insights";
+    if (abLoading) return "A/B Comparison";
+    return null;
+  };
+
   return (
     <ScanContext.Provider
       value={{
@@ -548,6 +566,9 @@ export function ScanProvider({ children }: { children: ReactNode }) {
         abLoading,
         abError,
         clearABComparison,
+
+        isAnyAuditRunning,
+        getCurrentRunningAudit,
       }}
     >
       {children}
