@@ -15,6 +15,7 @@ import {
   stealthGoto,
   getStealthContextOptions,
   sanitizeBrowserError,
+  capturePageScreenshot,
 } from "@/lib/browser-helpers";
 
 export const maxDuration = 300;
@@ -229,8 +230,11 @@ async function scanDevice(
     );
   }
 
-  const screenshotBuf = await page.screenshot({ fullPage: true, type: "jpeg", quality: 70 });
-  const screenshot = `data:image/jpeg;base64,${screenshotBuf.toString("base64")}`;
+  const screenshot = await capturePageScreenshot(page, {
+    fullPage: true,
+    type: "jpeg",
+    quality: 70,
+  });
 
   await page.addScriptTag({
     path: join(process.cwd(), "node_modules", "axe-core", "axe.min.js"),

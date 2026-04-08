@@ -256,3 +256,64 @@ export function sanitizeBrowserError(err: unknown): string {
 
   return withoutCallLog || "An unexpected error occurred. Please try again.";
 }
+
+/**
+ * Capture a screenshot with retry logic and DOM stability checking.
+ * Waits for the page to settle before attempting capture.
+ * Retries up to 3 times if capture fails.
+ */
+export async function capturePageScreenshot(
+  page: Page,
+  options: { fullPage?: boolean; type?: "jpeg" | "png"; quality?: number } = {}
+): Promise<string> {
+  const { fullPage = true, type = "jpeg", quality = 70 } = options;
+
+  // Wait for DOM to settle
+  await page.waitForTimeout(500);
+
+  // Try to capture with retries
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      // Check if page is still in good state
+      const currentUrl = page.url();
+      if (!currentUrl) throw new Error("Page URL unavailable");
+
+      // Ensure content is visible by scrolling to top
+      await page.evaluate(() => window.scrollTo(0, 0));
+
+      // Wait for any pending animations/renders
+      await page.evaluate(() => {
+        return new Promise((resolve) => {
+          if ((window as unknown as Record<string, unknown>).requestIdleCallback) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window as any).requestIdleCallback(() => resolve(null), { timeout: 2000 });
+          } else {
+            setTimeout(resolve, 100);
+          }
+        });
+      });
+
+      // Attempt screenshot capture
+      const screenshotBuf = await page.screenshot({
+        fullPage,
+        type,
+        quality,
+      });
+
+      return `data:image/${type};base64,${screenshotBuf.toString("base64")}`;
+    } catch (err) {
+      if (attempt < 2) {
+        // Wait longer before retry
+        await page.waitForTimeout(1000 * (attempt + 1));
+        continue;
+      }
+      // On final attempt, throw a descriptive error
+      const errMsg = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `Screenshot capture failed after 3 attempts: ${errMsg.substring(0, 100)}`
+      );
+    }
+  }
+
+  throw new Error("Screenshot capture failed");
+}

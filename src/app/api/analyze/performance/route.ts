@@ -19,6 +19,7 @@ import {
   stealthGoto,
   getStealthContextOptions,
   sanitizeBrowserError,
+  capturePageScreenshot,
 } from "@/lib/browser-helpers";
 
 interface ResourceEntry {
@@ -599,8 +600,11 @@ async function scanDevice(
     await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
   }
 
-  const screenshotBuf = await page.screenshot({ fullPage: true, type: "jpeg", quality: 70 });
-  const screenshot = `data:image/jpeg;base64,${screenshotBuf.toString("base64")}`;
+  const screenshot = await capturePageScreenshot(page, {
+    fullPage: true,
+    type: "jpeg",
+    quality: 70,
+  });
 
   await context.close();
 
