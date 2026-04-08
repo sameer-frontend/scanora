@@ -150,7 +150,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
           existing.timestamp = Date.now();
           localStorage.setItem(
             "AuditWave-scan-history",
-            JSON.stringify(prev.slice(0, 5)),
+            JSON.stringify(prev),
           );
         } else {
           const entry = {
@@ -163,7 +163,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
           };
           localStorage.setItem(
             "AuditWave-scan-history",
-            JSON.stringify([entry, ...prev].slice(0, 5)),
+            JSON.stringify([entry, ...prev]),
           );
         }
       } catch {

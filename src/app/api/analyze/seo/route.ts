@@ -531,26 +531,8 @@ async function scanDevice(
       deepAudit = analyzeDeepAudit(rawDeep, targetUrl);
     }
 
-    // Cap screenshot height to prevent OOM in serverless single-process Chromium
-    const bodyHeight = await page.evaluate(() => document.body?.scrollHeight ?? 0);
-    const maxHeight = Math.min(Math.max(bodyHeight, device.height), 4000);
-    let screenshot: string;
-    try {
-      const screenshotBuf = await page.screenshot({
-        fullPage: false,
-        clip: { x: 0, y: 0, width: device.width, height: maxHeight },
-        type: "jpeg",
-        quality: 70,
-      });
-      screenshot = `data:image/jpeg;base64,${screenshotBuf.toString("base64")}`;
-    } catch {
-      // Fallback to viewport-only screenshot if clip fails
-      const screenshotBuf = await page.screenshot({ type: "jpeg", quality: 60 });
-      screenshot = `data:image/jpeg;base64,${screenshotBuf.toString("base64")}`;
-    }
-
     return {
-      result: { device, screenshot, data: analyzeSeo(raw, targetUrl) },
+      result: { device, screenshot: "", data: analyzeSeo(raw, targetUrl) },
       deepAudit,
     };
   } finally {

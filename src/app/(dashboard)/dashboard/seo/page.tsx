@@ -30,7 +30,6 @@ import type { DeviceSeoResult, SeoData, SeoDeepAudit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const ScoreRing = lazy(() => import("@/components/dashboard/score-ring").then(m => ({ default: m.ScoreRing })));
-const ScreenshotCard = lazy(() => import("@/components/dashboard/screenshot-card").then(m => ({ default: m.ScreenshotCard })));
 
 function LazyFallback() {
   return <div className="h-32 animate-pulse rounded-xl bg-slate-800/40" />;
@@ -470,8 +469,6 @@ export default function SeoPage() {
     seoDeepAudit,
   } = useScan();
 
-  const [screenshotOpen, setScreenshotOpen] = useState(false);
-
   const activeResult: DeviceSeoResult | undefined = results?.[0];
 
   // Empty state
@@ -550,25 +547,8 @@ export default function SeoPage() {
         </div>
       </div>
 
-      {/* Score + Screenshot + Key Info */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-        {/* Screenshot */}
-        <div className="lg:col-span-2">
-          <Suspense fallback={<LazyFallback />}>
-            <ScreenshotCard
-              screenshot={activeResult.screenshot}
-              deviceName={activeResult.device.name}
-              deviceType={activeResult.device.type}
-              altText={`Screenshot of ${data.url}`}
-              accentColor="orange"
-              screenshotOpen={screenshotOpen}
-              onToggleScreenshot={() => setScreenshotOpen(!screenshotOpen)}
-              collapsedMaxH="max-h-70"
-              showDownload={false}
-            />
-          </Suspense>
-        </div>
-
+      {/* Score + Key Info */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Score */}
         <div>
           <Card className="h-full">

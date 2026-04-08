@@ -67,7 +67,7 @@ interface TechSignature {
 
 const TECH_SIGNATURES: TechSignature[] = [
   // Frameworks
-  { name: "React", category: "framework", website: "https://react.dev", globals: ["__REACT_DEVTOOLS_GLOBAL_HOOK__", "__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED"], scriptPatterns: [/react(?:\.production|\.development|\.min)?\.js/i], htmlPatterns: [/data-reactroot/i, /data-reactid/i] },
+  { name: "React", category: "framework", website: "https://react.dev", globals: ["__REACT_DEVTOOLS_GLOBAL_HOOK__", "__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED", "__REACT_FIBER_DETECTED__"], scriptPatterns: [/react(?:\.production|\.development|\.min)?\.js/i, /react-dom/i], htmlPatterns: [/data-reactroot/i, /data-reactid/i] },
   { name: "Next.js", category: "framework", website: "https://nextjs.org", globals: ["__NEXT_DATA__", "__next"], scriptPatterns: [/_next\//i], htmlPatterns: [/__NEXT_DATA__/i], metaPatterns: [{ name: "next-head-count" }] },
   { name: "Vue.js", category: "framework", website: "https://vuejs.org", globals: ["__VUE__", "Vue"], scriptPatterns: [/vue(?:\.runtime|\.global|\.min)?\.js/i], htmlPatterns: [/data-v-[a-f0-9]/i] },
   { name: "Nuxt", category: "framework", website: "https://nuxt.com", globals: ["__NUXT__", "$nuxt"], scriptPatterns: [/_nuxt\//i] },
@@ -170,6 +170,16 @@ async function detectTechnologies(
         results[g] = false;
       }
     }
+    // Detect React via DOM fiber properties (works in headless without DevTools)
+    try {
+      const el = document.getElementById("__next") || document.getElementById("root") || document.getElementById("app") || document.body?.firstElementChild;
+      if (el) {
+        const hasReactFiber = Object.keys(el).some(k => k.startsWith("__reactFiber$") || k.startsWith("__reactInternals") || k.startsWith("__reactProps$"));
+        if (hasReactFiber) {
+          results["__REACT_FIBER_DETECTED__"] = true;
+        }
+      }
+    } catch { /* ignore */ }
     return results;
   }, globalChecks);
 
@@ -274,19 +284,41 @@ export async function POST(req: NextRequest) {
     // Enable CDP for coverage
     const cdp = await context.newCDPSession(page);
 
-    // Track transfer sizes
-    const transferSizes = new Map<string, number>();
+    // Track transfer sizes via CDP (Performance API returns 0 for cross-origin)
+    const requestIdToUrl = new Map<string, string>();
+    const cdpSizes = new Map<string, { encoded: number; decoded: number }>();
+
     cdp.on("Network.responseReceived", (event: Record<string, unknown>) => {
+      const requestId = event.requestId as string;
       const resp = event.response as Record<string, unknown>;
       const url = resp.url as string;
-      if (url) transferSizes.set(url, 0);
+      if (requestId && url) {
+        requestIdToUrl.set(requestId, url);
+      }
     });
     cdp.on("Network.loadingFinished", (event: Record<string, unknown>) => {
-      const size = (event.encodedDataLength as number) || 0;
-      // Find URL by request ID
-      transferSizes.forEach((_, key) => {
-        if (!transferSizes.get(key)) transferSizes.set(key, size);
-      });
+      const requestId = event.requestId as string;
+      const encodedSize = (event.encodedDataLength as number) || 0;
+      const url = requestIdToUrl.get(requestId);
+      if (url) {
+        const existing = cdpSizes.get(url);
+        cdpSizes.set(url, {
+          encoded: encodedSize,
+          decoded: existing?.decoded || encodedSize,
+        });
+      }
+    });
+    cdp.on("Network.dataReceived", (event: Record<string, unknown>) => {
+      const requestId = event.requestId as string;
+      const dataLength = (event.dataLength as number) || 0;
+      const url = requestIdToUrl.get(requestId);
+      if (url) {
+        const existing = cdpSizes.get(url);
+        cdpSizes.set(url, {
+          encoded: existing?.encoded || 0,
+          decoded: (existing?.decoded || 0) + dataLength,
+        });
+      }
     });
     await cdp.send("Network.enable");
 
@@ -313,8 +345,8 @@ export async function POST(req: NextRequest) {
       result: { url: string; functions: { ranges: { startOffset: number; endOffset: number; count: number }[] }[] }[];
     };
 
-    // Collect resource sizes
-    const resources = await page.evaluate(() => {
+    // Collect resource sizes from Performance API
+    const perfResources = await page.evaluate(() => {
       return (performance.getEntriesByType("resource") as PerformanceResourceTiming[]).map((r) => ({
         url: r.name,
         transferSize: r.transferSize || r.encodedBodySize || 0,
@@ -322,6 +354,30 @@ export async function POST(req: NextRequest) {
         type: r.initiatorType,
       }));
     });
+
+    // Merge: use CDP sizes as fallback when Performance API returns 0
+    const resources = perfResources.map((r) => {
+      const cdp_data = cdpSizes.get(r.url);
+      return {
+        url: r.url,
+        transferSize: r.transferSize || cdp_data?.encoded || 0,
+        decodedSize: r.decodedSize || cdp_data?.decoded || cdp_data?.encoded || 0,
+        type: r.type,
+      };
+    });
+
+    // Also add CDP-only resources not captured by Performance API
+    const perfUrls = new Set(perfResources.map((r) => r.url));
+    for (const [url, sizes] of cdpSizes) {
+      if (!perfUrls.has(url) && !url.startsWith("data:")) {
+        resources.push({
+          url,
+          transferSize: sizes.encoded,
+          decodedSize: sizes.decoded || sizes.encoded,
+          type: "",
+        });
+      }
+    }
 
     // Detect technologies (Wappalyzer-like)
     const technologies = await detectTechnologies(page, resources.map((r) => r.url));
