@@ -153,13 +153,13 @@ export const DEVICE_PROFILES: DeviceProfile[] = [
 
 export interface DeviceAccessibilityResult {
   device: DeviceProfile;
-  screenshot: string; // base64 data URI
+  screenshot: string | null; // base64 data URI or null if capture failed
   data: AccessibilityData;
 }
 
 export interface DevicePerformanceResult {
   device: DeviceProfile;
-  screenshot: string; // base64 data URI
+  screenshot: string | null; // base64 data URI or null if capture failed
   data: PerformanceData;
 }
 

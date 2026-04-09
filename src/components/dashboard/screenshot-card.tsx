@@ -5,7 +5,7 @@ import { accentStyles } from "@/lib/constants";
 import type { AccentColor } from "@/lib/constants";
 
 interface ScreenshotCardProps {
-  screenshot: string;
+  screenshot: string | null;
   deviceName: string;
   deviceType: string;
   altText: string;
@@ -28,6 +28,28 @@ export function ScreenshotCard({
   showDownload = true,
 }: ScreenshotCardProps) {
   const linkColor = accentStyles[accentColor].linkColor;
+  
+  // Handle missing screenshot
+  if (!screenshot) {
+    return (
+      <Card className="overflow-hidden h-full">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Screenshot — {deviceName}</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="relative overflow-hidden transition-all bg-slate-950 flex items-center justify-center min-h-70 h-full">
+            <div className="text-center">
+              <div className="text-slate-400 text-sm mb-2">Screenshot Not Available</div>
+              <div className="text-slate-500 text-xs">Screenshot capture was skipped or unavailable</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return (
     <Card className="overflow-hidden h-full">
       <CardHeader className="pb-2">

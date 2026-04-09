@@ -230,11 +230,18 @@ async function scanDevice(
     );
   }
 
-  const screenshot = await capturePageScreenshot(page, {
-    fullPage: true,
-    type: "jpeg",
-    quality: 70,
-  });
+  // Try to capture screenshot once, don't fail if it doesn't work
+  let screenshot: string | null = null;
+  try {
+    screenshot = await capturePageScreenshot(page, {
+      fullPage: true,
+      type: "jpeg",
+      quality: 70,
+    });
+  } catch {
+    // Screenshot failed — continue without it
+    console.warn(`[a11y] Screenshot capture failed for ${targetUrl}, continuing without screenshot`);
+  }
 
   await page.addScriptTag({
     path: join(process.cwd(), "node_modules", "axe-core", "axe.min.js"),

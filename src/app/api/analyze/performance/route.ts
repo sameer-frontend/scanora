@@ -600,11 +600,18 @@ async function scanDevice(
     await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
   }
 
-  const screenshot = await capturePageScreenshot(page, {
-    fullPage: true,
-    type: "jpeg",
-    quality: 70,
-  });
+  // Try to capture screenshot once, don't fail if it doesn't work
+  let screenshot: string | null = null;
+  try {
+    screenshot = await capturePageScreenshot(page, {
+      fullPage: true,
+      type: "jpeg",
+      quality: 70,
+    });
+  } catch {
+    // Screenshot failed — continue without it
+    console.warn(`[perf] Screenshot capture failed for ${targetUrl}, continuing without screenshot`);
+  }
 
   await context.close();
 
