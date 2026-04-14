@@ -27,7 +27,12 @@ export function getStealthArgs(): string[] {
  * falls back to local Chromium for development.
  */
 export async function launchBrowser(): Promise<Browser> {
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  const useSparticuzChromium =
+    process.env.USE_CHROMIUM_MIN === "1" ||
+    process.env.VERCEL ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+  if (useSparticuzChromium) {
     const sparticuzChromium = (await import("@sparticuz/chromium-min")).default;
     return chromium.launch({
       args: [
@@ -42,6 +47,7 @@ export async function launchBrowser(): Promise<Browser> {
       headless: true,
     });
   }
+
   return chromium.launch({ headless: true, args: getStealthArgs() });
 }
 

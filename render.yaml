@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: auditwave
+    env: docker
+    branch: main
+    dockerfilePath: Dockerfile
+    autoDeploy: true
+    instanceType: starter
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: USE_CHROMIUM_MIN
+        value: "1"
